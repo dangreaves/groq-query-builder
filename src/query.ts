@@ -3,11 +3,14 @@ import { Type, TypeGuard } from "@sinclair/typebox";
 import type { TSchema, TArray } from "@sinclair/typebox";
 
 import {
+  isAlias,
   isExpandable,
   isCollection,
   needsExpansion,
+  getAliasLiteral,
   TUnionProjection,
   isUnionProjection,
+  isTypedProjection,
   getConditionalExpansionType,
 } from "./schemas";
 
@@ -77,11 +80,23 @@ export abstract class BaseQuery<T extends TSchema> {
         return `[]${this.serializeProjection(schema.items)}`;
       }
 
+      if (isAlias(schema)) {
+        return getAliasLiteral(schema);
+      }
+
       if (TypeGuard.IsObject(schema)) {
         let attributes: string[] = [];
 
         for (const [key, value] of Object.entries(schema.properties)) {
-          attributes.push(`${key}${this.serializeProjection(value)}`);
+          const projection = this.serializeProjection(value);
+
+          attributes.push(
+            !projection
+              ? key // naked key
+              : /^\[?\]?-?>?{/.test(projection) // test for []->{ with or without the array/ref parts
+                ? `${key}${projection}` // {} don't need quotes on key
+                : `"${key}":${projection}`, // other types need quoted keys,
+          );
         }
 
         return `{${attributes.join(",")}}`;
@@ -99,10 +114,15 @@ export abstract class BaseQuery<T extends TSchema> {
   protected serializeUnionConditions(schema: TUnionProjection): string {
     let conditions: string[] = [];
 
-    for (const projection of schema.anyOf) {
-      conditions.push(
-        `_type == "${projection.properties._type.const}" => ${this.serializeProjection(projection)}`,
-      );
+    for (const schemaVariant of schema.anyOf) {
+      if (isTypedProjection(schemaVariant)) {
+        conditions.push(
+          `_type == "${schemaVariant.properties._type.const}" => ${this.serializeProjection(schemaVariant)}`,
+        );
+      } else {
+        // Fallback schema
+        conditions.push(this.serializeProjection(schemaVariant));
+      }
     }
 
     return conditions.join(",");

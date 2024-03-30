@@ -25,6 +25,7 @@ export {
  * Symbols for attaching attributes to schemas.
  */
 const KindSymbol = Symbol("groq.Kind");
+const AliasLiteralSymbol = Symbol("groq.AliasLiteral");
 const NeedExpansionSymbol = Symbol("groq.NeedExpansion");
 const SupportsExpansionSymbol = Symbol("groq.SupportsExpansion");
 const ConditionalExpansionTypeSymbol = Symbol("groq.ConditionalExpansionType");
@@ -33,10 +34,49 @@ const ConditionalExpansionTypeSymbol = Symbol("groq.ConditionalExpansionType");
  * Enum of possible kind values.
  */
 enum Kind {
+  Alias = "Alias",
   Projection = "Projection",
   TypedProjection = "TypedProjection",
   UnionProjection = "UnionProjection",
   Collection = "Collection",
+}
+
+/**
+ * Alias to another attribute or literal.
+ * @example {foo:"literal"}
+ */
+export type TAlias<T extends TSchema = TSchema> = T &
+  Expandable & {
+    [KindSymbol]: Kind.Alias;
+    [AliasLiteralSymbol]: string;
+  };
+
+/**
+ * Create an alias.
+ */
+export function Alias<T extends TSchema>(
+  schema: T,
+  aliasLiteral: string,
+): TAlias<T> {
+  return {
+    ...schema,
+    [KindSymbol]: Kind.Alias,
+    [AliasLiteralSymbol]: aliasLiteral,
+  } as TAlias<T>;
+}
+
+/**
+ * Return true if this is an alias schema.
+ */
+export function isAlias(schema: unknown): schema is TAlias {
+  return Kind.Alias === (schema as TAlias)[KindSymbol];
+}
+
+/**
+ * Return the alias literal from the given alias.
+ */
+export function getAliasLiteral(schema: TAlias) {
+  return schema[AliasLiteralSymbol];
 }
 
 /**
@@ -105,13 +145,21 @@ export function isTypedProjection(schema: unknown): schema is TTypedProjection {
 }
 
 /**
+ * Fallback schema for union projections.
+ */
+const unionFallbackProjection = Projection({
+  _type: Alias(Type.Literal("unknown"), `"unknown"`),
+  _rawType: Alias(Type.String(), "_type"),
+});
+
+/**
  * Projection which uses the select operator to return a union of typed projections.
  * @see https://www.sanity.io/docs/query-cheat-sheet#64a36d80be73
- * @example "foo": select(_type == "person" => {name},_type == "company" => {companyName})
+ * @example foo{...select(_type == "person" => {name},_type == "company" => {companyName})}
  */
 export interface TUnionProjection<
   T extends TTypedProjection[] = TTypedProjection[],
-> extends TUnion<T>,
+> extends TUnion<[...T, typeof unionFallbackProjection]>,
     Expandable {
   [KindSymbol]: Kind.UnionProjection;
 }
@@ -119,12 +167,15 @@ export interface TUnionProjection<
 /**
  * Create a union from the given typed projections.
  */
-export function UnionProjection<T extends TTypedProjection[]>(
-  projections: T,
-): TUnionProjection<T> {
-  const schema = Type.Union(projections) as unknown as TUnionProjection<T>;
+export function UnionProjection<T extends TTypedProjection[]>(projections: T) {
+  const schema = Type.Union([
+    ...projections,
+    unionFallbackProjection,
+  ]) as unknown as TUnionProjection<T>;
+
   schema[KindSymbol] = Kind.UnionProjection;
   schema[SupportsExpansionSymbol] = true;
+
   return schema;
 }
 

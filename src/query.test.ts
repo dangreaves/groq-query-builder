@@ -93,7 +93,7 @@ describe("grab", () => {
     );
   });
 
-  test.skip("grab union projection", () => {
+  test("grab union projection", () => {
     const query = filterByType("movie").grab(
       Schemas.Projection({
         producer: Schemas.UnionProjection([
@@ -114,7 +114,7 @@ describe("grab", () => {
     );
   });
 
-  test.skip("grab expanded union projection", () => {
+  test("grab expanded union projection", () => {
     const query = filterByType("movie").grab(
       Schemas.Projection({
         producer: Schemas.Expand(
@@ -133,7 +133,7 @@ describe("grab", () => {
     );
 
     expect(query.serialize()).toBe(
-      `*[_type == "movie"][]{producer->{...select(_type == "person" => {_type,name},_type == "company" => {_type,companyName})}}`,
+      `*[_type == "movie"][]{producer->{...select(_type == "person" => {_type,name},_type == "company" => {_type,companyName},{"_type":"unknown","_rawType":_type})}}`,
     );
   });
 
