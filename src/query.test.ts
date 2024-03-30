@@ -4,12 +4,6 @@ import * as Schemas from "./schemas";
 
 import { filterByType } from "./query";
 
-test("filterByType", () => {
-  const query = filterByType("movie");
-
-  expect(query.serialize()).toBe(`*[_type == "movie"][]`);
-});
-
 describe("grab", () => {
   test("grab simple projection", () => {
     const query = filterByType("movie").grab({
@@ -187,5 +181,32 @@ describe("slice", () => {
   test("slice a group of entities", () => {
     const query = filterByType("movie").slice(0, 2);
     expect(query.serialize()).toBe(`*[_type == "movie"][0...2]`);
+  });
+});
+
+describe("filter", () => {
+  test("filter by type", () => {
+    const query = filterByType("movie");
+
+    expect(query.serialize()).toBe(`*[_type == "movie"][]`);
+  });
+
+  test("filter by type with additional filter", () => {
+    const query = filterByType("movie", `genre == "comedy"`);
+
+    expect(query.serialize()).toBe(
+      `*[_type == "movie" && genre == "comedy"][]`,
+    );
+  });
+
+  test("add filter condition", () => {
+    const query = filterByType("movie").filter(`genre == "comedy"`).grab({
+      title: Schemas.String(),
+      description: Schemas.String(),
+    });
+
+    expect(query.serialize()).toBe(
+      `*[_type == "movie"][genre == "comedy"][]{title,description}`,
+    );
   });
 });

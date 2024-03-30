@@ -17,13 +17,11 @@ import {
 import type { Selection, InferSchemaFromSelection } from "./types";
 
 export type Slice = { from: number; to?: number | undefined };
-export type ConditionGroup = { mode: "&&" | "||"; conditions: Condition[] };
-export type Condition = { key: string; operator: "==" | "!="; value: string };
 
 export type QueryPayload<T extends TSchema> = {
   schema: T;
   slice?: Slice;
-  conditionGroups?: ConditionGroup[];
+  filters: string[];
 };
 
 export abstract class BaseQuery<T extends TSchema> {
@@ -42,16 +40,9 @@ export abstract class BaseQuery<T extends TSchema> {
   serialize(): string {
     let query = ["*"];
 
-    // Append filter conditions.
-    if (
-      this.payload.conditionGroups &&
-      0 < this.payload.conditionGroups.length
-    ) {
-      for (const conditionGroup of this.payload.conditionGroups) {
-        query.push(
-          `[${conditionGroup.conditions.map(({ key, operator, value }) => `${key} ${operator} ${JSON.stringify(value)}`).join(conditionGroup.mode)}]`,
-        );
-      }
+    // Append filters.
+    for (const filter of this.payload.filters) {
+      query.push(`[${filter}]`);
     }
 
     /**
@@ -171,6 +162,16 @@ export class EntityQuery<T extends TSchema> extends BaseQuery<T> {
       schema,
     });
   }
+
+  /**
+   * Add filter condition.
+   */
+  filter(filterCondition: string) {
+    return new EntityQuery({
+      ...this.payload,
+      filters: [...this.payload.filters, filterCondition],
+    });
+  }
 }
 
 export class ArrayQuery<T extends TSchema> extends BaseQuery<T> {
@@ -197,6 +198,19 @@ export class ArrayQuery<T extends TSchema> extends BaseQuery<T> {
     });
   }
 
+  /**
+   * Add filter condition.
+   */
+  filter(filterCondition: string) {
+    return new EntityQuery({
+      ...this.payload,
+      filters: [...this.payload.filters, filterCondition],
+    });
+  }
+
+  /**
+   * Slice the collection.
+   */
   slice(from: Slice["from"], to?: Slice["to"]) {
     return new EntityQuery({
       ...this.payload,
@@ -204,6 +218,9 @@ export class ArrayQuery<T extends TSchema> extends BaseQuery<T> {
     });
   }
 
+  /**
+   * Return only the first result.
+   */
   first() {
     return this.slice(0);
   }
@@ -212,14 +229,11 @@ export class ArrayQuery<T extends TSchema> extends BaseQuery<T> {
 /**
  * Construct an array query filtered by document type.
  */
-export function filterByType(type: string) {
+export function filterByType(type: string, additionalFilter?: string) {
   return new ArrayQuery({
     schema: Type.Unknown(),
-    conditionGroups: [
-      {
-        mode: "&&",
-        conditions: [{ key: "_type", operator: "==", value: type }],
-      },
+    filters: [
+      `_type == "${type}"${additionalFilter ? ` && ${additionalFilter}` : ""}`,
     ],
   });
 }
