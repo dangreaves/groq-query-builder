@@ -3,6 +3,7 @@ import { Type } from "@sinclair/typebox";
 import type {
   TArray,
   TUnion,
+  TSchema,
   TObject,
   TLiteral,
   TProperties,
@@ -135,16 +136,11 @@ export function isUnionProjection(schema: unknown): schema is TUnionProjection {
 }
 
 /**
- * Union type for all projections.
- */
-export type TAnyProjection = TProjection | TTypedProjection | TUnionProjection;
-
-/**
  * Array of projections.
  * @example foo[]{title,description}
  */
-export interface TCollection<T extends TProperties = TProperties>
-  extends TArray<TProjection<T>>,
+export interface TCollection<T extends TSchema = TSchema>
+  extends TArray<T>,
     Expandable {
   [KindSymbol]: Kind.Collection;
 }
@@ -152,10 +148,8 @@ export interface TCollection<T extends TProperties = TProperties>
 /**
  * Create an array of projections.
  */
-export function Collection<T extends TProperties>(
-  properties: T,
-): TCollection<T> {
-  const schema = Type.Array(Projection(properties)) as TCollection<T>;
+export function Collection<T extends TSchema>(projection: T): TCollection<T> {
+  const schema = Type.Array(projection) as TCollection<T>;
   schema[KindSymbol] = Kind.Collection;
   schema[SupportsExpansionSymbol] = true;
   return schema;

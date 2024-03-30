@@ -1,15 +1,12 @@
 import { Type, TypeGuard } from "@sinclair/typebox";
 
-import type { TObject, TSchema, TArray } from "@sinclair/typebox";
+import type { TSchema, TArray } from "@sinclair/typebox";
 
 import {
-  isProjection,
   isExpandable,
   isCollection,
-  TAnyProjection,
   needsExpansion,
   TUnionProjection,
-  isTypedProjection,
   isUnionProjection,
   getConditionalExpansionType,
 } from "./schemas";
@@ -46,6 +43,7 @@ export abstract class BaseQuery<T extends TSchema> {
     /**
      * Append slice conditions.
      * If no slice conditions applied, then [] is added, because Sanity will return an array.
+     * @todo Could refactor this to be part of the Collection schema along with filter?
      */
     if (this.payload.slice) {
       if ("undefined" !== typeof this.payload.slice.to) {
@@ -57,52 +55,42 @@ export abstract class BaseQuery<T extends TSchema> {
       query.push("[]");
     }
 
-    // Get actual projection from inside array schema if needed.
-    const projection = TypeGuard.IsObject(this.payload.schema)
-      ? this.payload.schema
-      : TypeGuard.IsArray(this.payload.schema) &&
-          TypeGuard.IsObject(this.payload.schema.items)
-        ? this.payload.schema.items
-        : null;
-
     // Append serialized projection.
-    if (projection) {
-      query.push(this.serializeProjection(projection));
-    }
+    query.push(this.serializeProjection(this.payload.schema));
 
     return query.join("");
   }
 
   /**
-   * Serialize the given projection schema to a GROQ string.
+   * Recursively serialize the given schema to a GROQ projection string.
    */
-  protected serializeProjection(schema: TObject): string {
-    let attributes: string[] = [];
+  protected serializeProjection(schema: TSchema): string {
+    if (TypeGuard.IsUnknown(schema)) return "";
 
-    for (const [key, value] of Object.entries(schema.properties)) {
-      if (isProjection(value) || isTypedProjection(value)) {
-        attributes.push(`${key}${this.serializeProjection(value)}`);
-        continue;
+    const innerProjection = (() => {
+      if (isUnionProjection(schema)) {
+        return `{...select(${this.serializeUnionConditions(schema)})}`;
       }
 
-      if (isUnionProjection(value)) {
-        attributes.push(
-          `${key}${this.wrapExpansionQuery(value, `{...select(${this.serializeUnionConditions(value)})}`)}`,
-        );
-        continue;
+      if (isCollection(schema)) {
+        // @todo Maybe fetch filter and slice information here to allow nested filters.
+        return `[]${this.serializeProjection(schema.items)}`;
       }
 
-      if (isCollection(value)) {
-        attributes.push(
-          `${key}[]${this.wrapExpansionQuery(value, this.serializeProjection(value.items))}`,
-        );
-        continue;
+      if (TypeGuard.IsObject(schema)) {
+        let attributes: string[] = [];
+
+        for (const [key, value] of Object.entries(schema.properties)) {
+          attributes.push(`${key}${this.serializeProjection(value)}`);
+        }
+
+        return `{${attributes.join(",")}}`;
       }
 
-      attributes.push(key);
-    }
+      return "";
+    })();
 
-    return this.wrapExpansionQuery(schema, `{${attributes.join(",")}}`);
+    return this.wrapExpansionQuery(schema, innerProjection);
   }
 
   /**
@@ -148,10 +136,10 @@ export class EntityQuery<T extends TSchema> extends BaseQuery<T> {
   /**
    * Grab attributes with a projection.
    */
-  grab<P extends TAnyProjection>(projection: P) {
+  grab<T extends TSchema>(schema: T) {
     return new EntityQuery({
       ...this.payload,
-      schema: projection,
+      schema,
     });
   }
 
@@ -177,10 +165,10 @@ export class ArrayQuery<T extends TSchema> extends BaseQuery<T> {
   /**
    * Grab attributes with a projection.
    */
-  grab<P extends TAnyProjection>(projection: P) {
+  grab<T extends TSchema>(schema: T) {
     return new ArrayQuery({
       ...this.payload,
-      schema: projection,
+      schema,
     });
   }
 

@@ -60,9 +60,11 @@ describe("grab", () => {
       Schemas.Projection({
         title: Schemas.String(),
         description: Schemas.String(),
-        categories: Schemas.Collection({
-          name: Schemas.String(),
-        }),
+        categories: Schemas.Collection(
+          Schemas.Projection({
+            name: Schemas.String(),
+          }),
+        ),
       }),
     );
 
@@ -76,10 +78,12 @@ describe("grab", () => {
       Schemas.Projection({
         title: Schemas.String(),
         description: Schemas.String(),
-        categories: Schemas.Expand(
-          Schemas.Collection({
-            name: Schemas.String(),
-          }),
+        categories: Schemas.Collection(
+          Schemas.Expand(
+            Schemas.Projection({
+              name: Schemas.String(),
+            }),
+          ),
         ),
       }),
     );
