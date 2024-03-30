@@ -6,11 +6,11 @@
   "dependencies": {
     "@sinclair/typebox": "^0.32.20"
   },
-  "peerDependencies": {
-    "@sanity/client": "^6.15.7"
-  },
   "devDependencies": {
     "@sanity/client": "^6.15.7",
+    "@tsconfig/node20": "^20.1.4",
+    "@tsconfig/strictest": "^2.0.5",
+    "@types/node": "^20.11.30",
     "prettier": "^3.2.5",
     "typescript": "^5.4.3",
     "vitest": "^1.4.0"
