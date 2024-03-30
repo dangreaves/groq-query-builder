@@ -1,0 +1,191 @@
+import { expect, test, describe } from "vitest";
+
+import * as Schemas from "./schemas";
+
+import { filterByType } from "./query";
+
+test("filterByType", () => {
+  const query = filterByType("movie");
+
+  expect(query.serialize()).toBe(`*[_type == "movie"][]`);
+});
+
+describe("grab", () => {
+  test("grab simple projection", () => {
+    const query = filterByType("movie").grab({
+      title: Schemas.String(),
+      description: Schemas.String(),
+    });
+
+    expect(query.serialize()).toBe(`*[_type == "movie"][]{title,description}`);
+  });
+
+  test("grab nested projection", () => {
+    const query = filterByType("movie").grab({
+      title: Schemas.String(),
+      description: Schemas.String(),
+      metadata: Schemas.Projection({
+        keywords: Schemas.String(),
+        isReleased: Schemas.Boolean(),
+      }),
+    });
+
+    expect(query.serialize()).toBe(
+      `*[_type == "movie"][]{title,description,metadata{keywords,isReleased}}`,
+    );
+  });
+
+  test("grab nested reference", () => {
+    const query = filterByType("movie").grab({
+      title: Schemas.String(),
+      description: Schemas.String(),
+      metadata: Schemas.Projection({
+        keywords: Schemas.String(),
+        isReleased: Schemas.Boolean(),
+      }),
+      author: Schemas.Expand(
+        Schemas.Projection({
+          name: Schemas.String(),
+        }),
+      ),
+    });
+
+    expect(query.serialize()).toBe(
+      `*[_type == "movie"][]{title,description,metadata{keywords,isReleased},author->{name}}`,
+    );
+  });
+
+  test("grab nested collection", () => {
+    const query = filterByType("movie").grab({
+      title: Schemas.String(),
+      description: Schemas.String(),
+      categories: Schemas.Collection({
+        name: Schemas.String(),
+      }),
+    });
+
+    expect(query.serialize()).toBe(
+      `*[_type == "movie"][]{title,description,categories[]{name}}`,
+    );
+  });
+
+  test("grab nested reference collection", () => {
+    const query = filterByType("movie").grab({
+      title: Schemas.String(),
+      description: Schemas.String(),
+      categories: Schemas.Expand(
+        Schemas.Collection({
+          name: Schemas.String(),
+        }),
+      ),
+    });
+
+    expect(query.serialize()).toBe(
+      `*[_type == "movie"][]{title,description,categories[]->{name}}`,
+    );
+  });
+
+  test("grab union projection", () => {
+    const query = filterByType("movie").grab({
+      producer: Schemas.UnionProjection([
+        Schemas.TypedProjection({
+          _type: Schemas.Literal("person"),
+          name: Schemas.String(),
+        }),
+        Schemas.TypedProjection({
+          _type: Schemas.Literal("company"),
+          companyName: Schemas.String(),
+        }),
+      ]),
+    });
+
+    expect(query.serialize()).toBe(
+      `*[_type == "movie"][]{producer{...select(_type == "person" => {_type,name},_type == "company" => {_type,companyName})}}`,
+    );
+  });
+
+  test("grab expanded union projection", () => {
+    const query = filterByType("movie").grab({
+      producer: Schemas.Expand(
+        Schemas.UnionProjection([
+          Schemas.TypedProjection({
+            _type: Schemas.Literal("person"),
+            name: Schemas.String(),
+          }),
+          Schemas.TypedProjection({
+            _type: Schemas.Literal("company"),
+            companyName: Schemas.String(),
+          }),
+        ]),
+      ),
+    });
+
+    expect(query.serialize()).toBe(
+      `*[_type == "movie"][]{producer->{...select(_type == "person" => {_type,name},_type == "company" => {_type,companyName})}}`,
+    );
+  });
+
+  test("grab conditional expanded projection", () => {
+    const query = filterByType("movie").grab(
+      Schemas.ConditionalExpand(
+        Schemas.TypedProjection({
+          _type: Schemas.Literal("person"),
+          name: Schemas.String(),
+        }),
+      ),
+    );
+
+    expect(query.serialize()).toBe(
+      `*[_type == "movie"][]{_type == "reference" => @->{_type,name},_type != "reference" => @{_type,name}}`,
+    );
+  });
+
+  test("grab conditional expanded projection with custom type", () => {
+    const query = filterByType("movie").grab(
+      Schemas.ConditionalExpand(
+        Schemas.TypedProjection({
+          _type: Schemas.Literal("person"),
+          name: Schemas.String(),
+        }),
+        { type: "customReference" },
+      ),
+    );
+
+    expect(query.serialize()).toBe(
+      `*[_type == "movie"][]{_type == "customReference" => @->{_type,name},_type != "customReference" => @{_type,name}}`,
+    );
+  });
+
+  test("grab with raw projection instead of selection", () => {
+    const query = filterByType("movie").grab(
+      Schemas.Projection({
+        title: Schemas.String(),
+      }),
+    );
+
+    expect(query.serialize()).toBe(`*[_type == "movie"][]{title}`);
+  });
+
+  test("grab with raw typed projection instead of selection", () => {
+    const query = filterByType("movie").grab(
+      Schemas.TypedProjection({
+        _type: Schemas.Literal("movie"),
+        title: Schemas.String(),
+      }),
+    );
+
+    expect(query.serialize()).toBe(`*[_type == "movie"][]{_type,title}`);
+  });
+});
+
+describe("slice", () => {
+  test("slice a single entity", () => {
+    const query = filterByType("movie").slice(0);
+    expect(query.serialize()).toBe(`*[_type == "movie"][0]`);
+  });
+
+  test("slice a group of entities", () => {
+    const query = filterByType("movie").slice(0, 2);
+    expect(query.serialize()).toBe(`*[_type == "movie"][0...2]`);
+  });
+});
