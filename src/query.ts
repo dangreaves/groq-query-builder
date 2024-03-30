@@ -161,9 +161,10 @@ export class EntityQuery<T extends TSchema> extends BaseQuery<T> {
    */
   grab<S extends Selection>(selection: S) {
     // If passed a raw object, wrap in a projection schema.
-    const schema = (
-      TypeGuard.IsSchema(selection) ? selection : Projection(selection)
-    ) as InferSchemaFromSelection<S>;
+    // @ts-ignore Type instantiation is excessively deep and possibly infinite.
+    const schema: InferSchemaFromSelection<S> = TypeGuard.IsSchema(selection)
+      ? selection
+      : Projection(selection);
 
     return new EntityQuery({
       ...this.payload,
@@ -185,9 +186,10 @@ export class ArrayQuery<T extends TSchema> extends BaseQuery<T> {
    */
   grab<S extends Selection>(selection: S) {
     // If passed a raw object, wrap in a projection schema.
-    const schema = (
-      TypeGuard.IsSchema(selection) ? selection : Projection(selection)
-    ) as InferSchemaFromSelection<S>;
+    // @ts-ignore Type instantiation is excessively deep and possibly infinite.
+    const schema: InferSchemaFromSelection<S> = TypeGuard.IsSchema(selection)
+      ? selection
+      : Projection(selection);
 
     return new ArrayQuery({
       ...this.payload,
