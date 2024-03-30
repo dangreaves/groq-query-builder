@@ -3,18 +3,16 @@ import { Type, TypeGuard } from "@sinclair/typebox";
 import type { TObject, TSchema, TArray } from "@sinclair/typebox";
 
 import {
-  Projection,
   isProjection,
   isExpandable,
   isCollection,
+  TAnyProjection,
   needsExpansion,
   TUnionProjection,
   isTypedProjection,
   isUnionProjection,
   getConditionalExpansionType,
 } from "./schemas";
-
-import type { Selection, InferSchemaFromSelection } from "./types";
 
 export type Slice = { from: number; to?: number | undefined };
 
@@ -150,16 +148,10 @@ export class EntityQuery<T extends TSchema> extends BaseQuery<T> {
   /**
    * Grab attributes with a projection.
    */
-  grab<S extends Selection>(selection: S) {
-    // If passed a raw object, wrap in a projection schema.
-    // @ts-ignore Type instantiation is excessively deep and possibly infinite.
-    const schema: InferSchemaFromSelection<S> = TypeGuard.IsSchema(selection)
-      ? selection
-      : Projection(selection);
-
+  grab<P extends TAnyProjection>(projection: P) {
     return new EntityQuery({
       ...this.payload,
-      schema,
+      schema: projection,
     });
   }
 
@@ -185,16 +177,10 @@ export class ArrayQuery<T extends TSchema> extends BaseQuery<T> {
   /**
    * Grab attributes with a projection.
    */
-  grab<S extends Selection>(selection: S) {
-    // If passed a raw object, wrap in a projection schema.
-    // @ts-ignore Type instantiation is excessively deep and possibly infinite.
-    const schema: InferSchemaFromSelection<S> = TypeGuard.IsSchema(selection)
-      ? selection
-      : Projection(selection);
-
+  grab<P extends TAnyProjection>(projection: P) {
     return new ArrayQuery({
       ...this.payload,
-      schema,
+      schema: projection,
     });
   }
 

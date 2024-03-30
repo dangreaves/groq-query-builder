@@ -6,12 +6,14 @@ import { makeSafeSanityFetch } from "./client";
 
 import * as Schemas from "./schemas";
 
-const query = filterByType("movie").grab({
-  title: Schemas.String(),
-  director: Schemas.Projection({
-    name: Schemas.String(),
+const query = filterByType("movie").grab(
+  Schemas.Projection({
+    title: Schemas.String(),
+    director: Schemas.Projection({
+      name: Schemas.String(),
+    }),
   }),
-});
+);
 
 const mockFn = vi.fn(() =>
   Promise.resolve([

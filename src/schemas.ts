@@ -135,6 +135,11 @@ export function isUnionProjection(schema: unknown): schema is TUnionProjection {
 }
 
 /**
+ * Union type for all projections.
+ */
+export type TAnyProjection = TProjection | TTypedProjection | TUnionProjection;
+
+/**
  * Array of projections.
  * @example foo[]{title,description}
  */
