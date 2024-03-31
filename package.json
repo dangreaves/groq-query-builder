@@ -28,11 +28,15 @@
   "dependencies": {
     "@sinclair/typebox": "^0.32.20"
   },
+  "peerDependencies": {
+    "pino": "^8.19.0"
+  },
   "devDependencies": {
     "@sanity/client": "^6.15.7",
     "@tsconfig/node20": "^20.1.4",
     "@tsconfig/strictest": "^2.0.5",
     "@types/node": "^20.11.30",
+    "pino": "^8.19.0",
     "prettier": "^3.2.5",
     "tsup": "^8.0.2",
     "typescript": "^5.4.3",
