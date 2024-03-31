@@ -75,13 +75,17 @@ export abstract class BaseQuery<T extends TSchema> {
         return `{...select(${this.serializeUnionConditions(schema)})}`;
       }
 
+      if (isAlias(schema)) {
+        return getAliasLiteral(schema);
+      }
+
       if (isCollection(schema)) {
         // @todo Maybe fetch filter and slice information here to allow nested filters.
         return `[]${this.serializeProjection(schema.items)}`;
       }
 
-      if (isAlias(schema)) {
-        return getAliasLiteral(schema);
+      if (TypeGuard.IsArray(schema)) {
+        return `[]${this.serializeProjection(schema.items)}`;
       }
 
       if (TypeGuard.IsObject(schema)) {

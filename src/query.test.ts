@@ -93,6 +93,24 @@ describe("grab", () => {
     );
   });
 
+  test("grab nested array", () => {
+    const query = filterByType("movie").grab(
+      Schemas.Projection({
+        title: Schemas.String(),
+        description: Schemas.String(),
+        categories: Schemas.Array(
+          Schemas.Projection({
+            name: Schemas.String(),
+          }),
+        ),
+      }),
+    );
+
+    expect(query.serialize()).toBe(
+      `*[_type == "movie"][]{title,description,categories[]{name}}`,
+    );
+  });
+
   test("grab union projection", () => {
     const query = filterByType("movie").grab(
       Schemas.Projection({
