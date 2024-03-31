@@ -65,7 +65,7 @@ export function getConditionalExpansionType(schema: TSchema) {
  * Enum of possible kind values.
  */
 enum Kind {
-  UnionProjection = "UnionProjection",
+  TypedUnion = "TypedUnion",
 }
 
 /**
@@ -137,28 +137,28 @@ const unionFallbackProjection = Type.Object({
  * @see https://www.sanity.io/docs/query-cheat-sheet#64a36d80be73
  * @example foo{...select(_type == "person" => {name},_type == "company" => {companyName})}
  */
-export interface TUnionProjection<T extends TTypedObject[] = TTypedObject[]>
+export interface TTypedUnion<T extends TTypedObject[] = TTypedObject[]>
   extends TUnion<[...T, typeof unionFallbackProjection]> {
-  [KindSymbol]: Kind.UnionProjection;
+  [KindSymbol]: Kind.TypedUnion;
 }
 
 /**
- * Create a union from the given typed projections.
+ * Create a union from the given typed objects.
  */
-export function UnionProjection<T extends TTypedObject[]>(projections: T) {
+export function TypedUnion<T extends TTypedObject[]>(projections: T) {
   const schema = Type.Union([
     ...projections,
     unionFallbackProjection,
-  ]) as unknown as TUnionProjection<T>;
-  schema[KindSymbol] = Kind.UnionProjection;
+  ]) as unknown as TTypedUnion<T>;
+  schema[KindSymbol] = Kind.TypedUnion;
   return schema;
 }
 
 /**
- * Return true if this is a union projection schema.
+ * Return true if this is a typed union schema
  */
-export function isUnionProjection(schema: unknown): schema is TUnionProjection {
-  return Kind.UnionProjection === (schema as TUnionProjection)[KindSymbol];
+export function isTypedUnion(schema: unknown): schema is TTypedUnion {
+  return Kind.TypedUnion === (schema as TTypedUnion)[KindSymbol];
 }
 
 /**

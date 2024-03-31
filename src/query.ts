@@ -4,10 +4,10 @@ import type { TSchema, TArray } from "@sinclair/typebox";
 
 import {
   isAlias,
+  TTypedUnion,
+  isTypedUnion,
   needsExpansion,
   getAliasLiteral,
-  TUnionProjection,
-  isUnionProjection,
   getConditionalExpansionType,
 } from "./schemas";
 
@@ -68,7 +68,7 @@ export abstract class BaseQuery<T extends TSchema> {
     const innerProjection = (() => {
       if (TypeGuard.IsUnknown(schema)) return "";
 
-      if (isUnionProjection(schema)) {
+      if (isTypedUnion(schema)) {
         return `{...select(${this.serializeUnionConditions(schema)})}`;
       }
 
@@ -109,7 +109,7 @@ export abstract class BaseQuery<T extends TSchema> {
   /**
    * Serialize the given union projection to a GROQ select conditions string.
    */
-  protected serializeUnionConditions(schema: TUnionProjection): string {
+  protected serializeUnionConditions(schema: TTypedUnion): string {
     let conditions: string[] = [];
 
     for (const schemaVariant of schema.anyOf) {
