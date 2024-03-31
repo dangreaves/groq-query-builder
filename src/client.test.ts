@@ -9,9 +9,9 @@ import { makeSafeSanityFetch } from "./client";
 import * as Schemas from "./schemas";
 
 const query = filterByType("movie").grab(
-  Schemas.Projection({
+  Schemas.Object({
     title: Schemas.String(),
-    director: Schemas.Projection({
+    director: Schemas.Object({
       name: Schemas.String(),
     }),
   }),

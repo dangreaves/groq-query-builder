@@ -5,9 +5,9 @@ import * as Schemas from "./schemas";
 import { filterByType } from "./query";
 
 describe("grab", () => {
-  test("grab simple projection", () => {
+  test("grab simple object", () => {
     const query = filterByType("movie").grab(
-      Schemas.Projection({
+      Schemas.Object({
         title: Schemas.String(),
         description: Schemas.String(),
       }),
@@ -16,12 +16,12 @@ describe("grab", () => {
     expect(query.serialize()).toBe(`*[_type == "movie"][]{title,description}`);
   });
 
-  test("grab nested projection", () => {
+  test("grab nested object", () => {
     const query = filterByType("movie").grab(
-      Schemas.Projection({
+      Schemas.Object({
         title: Schemas.String(),
         description: Schemas.String(),
-        metadata: Schemas.Projection({
+        metadata: Schemas.Object({
           keywords: Schemas.String(),
           isReleased: Schemas.Boolean(),
         }),
@@ -35,15 +35,15 @@ describe("grab", () => {
 
   test("grab nested reference", () => {
     const query = filterByType("movie").grab(
-      Schemas.Projection({
+      Schemas.Object({
         title: Schemas.String(),
         description: Schemas.String(),
-        metadata: Schemas.Projection({
+        metadata: Schemas.Object({
           keywords: Schemas.String(),
           isReleased: Schemas.Boolean(),
         }),
         author: Schemas.Expand(
-          Schemas.Projection({
+          Schemas.Object({
             name: Schemas.String(),
           }),
         ),
@@ -57,11 +57,11 @@ describe("grab", () => {
 
   test("grab nested array", () => {
     const query = filterByType("movie").grab(
-      Schemas.Projection({
+      Schemas.Object({
         title: Schemas.String(),
         description: Schemas.String(),
         categories: Schemas.Array(
-          Schemas.Projection({
+          Schemas.Object({
             name: Schemas.String(),
           }),
         ),
@@ -75,12 +75,12 @@ describe("grab", () => {
 
   test("grab nested reference array", () => {
     const query = filterByType("movie").grab(
-      Schemas.Projection({
+      Schemas.Object({
         title: Schemas.String(),
         description: Schemas.String(),
         categories: Schemas.Array(
           Schemas.Expand(
-            Schemas.Projection({
+            Schemas.Object({
               name: Schemas.String(),
             }),
           ),
@@ -95,11 +95,11 @@ describe("grab", () => {
 
   test("grab nested array", () => {
     const query = filterByType("movie").grab(
-      Schemas.Projection({
+      Schemas.Object({
         title: Schemas.String(),
         description: Schemas.String(),
         categories: Schemas.Array(
-          Schemas.Projection({
+          Schemas.Object({
             name: Schemas.String(),
           }),
         ),
@@ -113,7 +113,7 @@ describe("grab", () => {
 
   test("grab union projection", () => {
     const query = filterByType("movie").grab(
-      Schemas.Projection({
+      Schemas.Object({
         producer: Schemas.UnionProjection([
           Schemas.TypedProjection({
             _type: Schemas.Literal("person"),
@@ -134,7 +134,7 @@ describe("grab", () => {
 
   test("grab expanded union projection", () => {
     const query = filterByType("movie").grab(
-      Schemas.Projection({
+      Schemas.Object({
         producer: Schemas.Expand(
           Schemas.UnionProjection([
             Schemas.TypedProjection({
@@ -188,7 +188,7 @@ describe("grab", () => {
 
   test("unknown array type", () => {
     const query = filterByType("movie").grab(
-      Schemas.Projection({ content: Schemas.Array(Schemas.Unknown()) }),
+      Schemas.Object({ content: Schemas.Array(Schemas.Unknown()) }),
     );
 
     expect(query.serialize()).toBe(`*[_type == "movie"][]{content[]}`);
@@ -196,7 +196,7 @@ describe("grab", () => {
 
   test("expanded unknown array type", () => {
     const query = filterByType("movie").grab(
-      Schemas.Projection({
+      Schemas.Object({
         content: Schemas.Array(Schemas.Expand(Schemas.Unknown())),
       }),
     );
@@ -236,7 +236,7 @@ describe("filter", () => {
     const query = filterByType("movie")
       .filter(`genre == "comedy"`)
       .grab(
-        Schemas.Projection({
+        Schemas.Object({
           title: Schemas.String(),
           description: Schemas.String(),
         }),

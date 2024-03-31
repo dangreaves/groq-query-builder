@@ -15,6 +15,7 @@ export {
   Array,
   String,
   Number,
+  Object,
   Literal,
   Boolean,
   Unknown,
@@ -71,7 +72,6 @@ export function getConditionalExpansionType(schema: TSchema) {
  * Enum of possible kind values.
  */
 enum Kind {
-  Projection = "Projection",
   TypedProjection = "TypedProjection",
   UnionProjection = "UnionProjection",
 }
@@ -112,33 +112,6 @@ export function getAliasLiteral(schema: TAlias) {
 }
 
 /**
- * Simple projection of attributes.
- * @example foo{title,description}
- */
-export interface TProjection<T extends TProperties = TProperties>
-  extends TObject<T> {
-  [KindSymbol]: Kind.Projection;
-}
-
-/**
- * Create a projection with the given properties.
- */
-export function Projection<T extends TProperties>(
-  properties: T,
-): TProjection<T> {
-  const schema = Type.Object(properties) as TProjection<T>;
-  schema[KindSymbol] = Kind.Projection;
-  return schema;
-}
-
-/**
- * Return true if this is a projection schema.
- */
-export function isProjection(schema: unknown): schema is TProjection {
-  return Kind.Projection === (schema as TProjection)[KindSymbol];
-}
-
-/**
  * Projection of attributes with the _type attribute defined.
  * @example foo{_type,title,description}
  */
@@ -158,7 +131,7 @@ export function TypedProjection<
     _type: TLiteral<any>;
   },
 >(properties: T): TTypedProjection<T> {
-  const schema = Projection(properties) as unknown as TTypedProjection<T>;
+  const schema = Type.Object(properties) as unknown as TTypedProjection<T>;
   schema[KindSymbol] = Kind.TypedProjection;
   return schema;
 }
@@ -173,7 +146,7 @@ export function isTypedProjection(schema: unknown): schema is TTypedProjection {
 /**
  * Fallback schema for union projections.
  */
-const unionFallbackProjection = Projection({
+const unionFallbackProjection = Type.Object({
   _type: Alias(Type.Literal("unknown"), `"unknown"`),
   _rawType: Alias(Type.String(), "_type"),
 });
