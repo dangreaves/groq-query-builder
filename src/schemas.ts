@@ -1,7 +1,6 @@
 import { Type } from "@sinclair/typebox";
 
 import type {
-  TArray,
   TUnion,
   TSchema,
   TObject,
@@ -72,7 +71,6 @@ export function getConditionalExpansionType(schema: TSchema) {
  * Enum of possible kind values.
  */
 enum Kind {
-  Alias = "Alias",
   Projection = "Projection",
   TypedProjection = "TypedProjection",
   UnionProjection = "UnionProjection",
@@ -83,7 +81,6 @@ enum Kind {
  * @example {foo:"literal"}
  */
 export type TAlias<T extends TSchema = TSchema> = T & {
-  [KindSymbol]: Kind.Alias;
   [AliasLiteralSymbol]: string;
 };
 
@@ -96,7 +93,6 @@ export function Alias<T extends TSchema>(
 ): TAlias<T> {
   return {
     ...schema,
-    [KindSymbol]: Kind.Alias,
     [AliasLiteralSymbol]: aliasLiteral,
   } as TAlias<T>;
 }
@@ -105,7 +101,7 @@ export function Alias<T extends TSchema>(
  * Return true if this is an alias schema.
  */
 export function isAlias(schema: unknown): schema is TAlias {
-  return Kind.Alias === (schema as TSchema)[KindSymbol];
+  return !!(schema as TSchema)[AliasLiteralSymbol];
 }
 
 /**
