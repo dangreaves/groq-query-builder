@@ -22,6 +22,12 @@ export {
 } from "@sinclair/typebox";
 
 /**
+ * Allow the given schema to be null.
+ */
+export const Nullable = <T extends TSchema>(schema: T) =>
+  Type.Union([schema, Type.Null()]);
+
+/**
  * Symbols for attaching attributes to schemas.
  */
 const KindSymbol = Symbol("groq.Kind");
