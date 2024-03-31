@@ -15,7 +15,7 @@ export function makeSafeSanityFetch(
 ) {
   return async function fetchSanity<T extends BaseQuery<any>>(
     query: T,
-    params?: Record<string, string>,
+    params?: Record<string, string | number>,
   ): Promise<InferFromQuery<T>> {
     // Serialize the query to a GROQ string.
     const groq = query.serialize();
