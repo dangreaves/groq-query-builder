@@ -33,8 +33,40 @@ export const Nullable = <T extends TSchema>(schema: T) =>
 const KindSymbol = Symbol("groq.Kind");
 const AliasLiteralSymbol = Symbol("groq.AliasLiteral");
 const NeedExpansionSymbol = Symbol("groq.NeedExpansion");
-const SupportsExpansionSymbol = Symbol("groq.SupportsExpansion");
 const ConditionalExpansionTypeSymbol = Symbol("groq.ConditionalExpansionType");
+
+/**
+ * Attach symbols to schema interface.
+ */
+declare module "@sinclair/typebox" {
+  interface TSchema {
+    [KindSymbol]?: string;
+    [AliasLiteralSymbol]?: string;
+    [NeedExpansionSymbol]?: boolean;
+    [ConditionalExpansionTypeSymbol]?: string;
+  }
+}
+
+/**
+ * Return kind from the given schema.
+ */
+export function getKind(schema: TSchema) {
+  return schema[KindSymbol];
+}
+
+/**
+ * Return true if the given schema needs expansion
+ */
+export function needsExpansion(schema: TSchema) {
+  return !!schema[NeedExpansionSymbol];
+}
+
+/**
+ * Return the conditional expansion type for the given schema.
+ */
+export function getConditionalExpansionType(schema: TSchema) {
+  return schema[ConditionalExpansionTypeSymbol];
+}
 
 /**
  * Enum of possible kind values.
@@ -51,11 +83,10 @@ enum Kind {
  * Alias to another attribute or literal.
  * @example {foo:"literal"}
  */
-export type TAlias<T extends TSchema = TSchema> = T &
-  Expandable & {
-    [KindSymbol]: Kind.Alias;
-    [AliasLiteralSymbol]: string;
-  };
+export type TAlias<T extends TSchema = TSchema> = T & {
+  [KindSymbol]: Kind.Alias;
+  [AliasLiteralSymbol]: string;
+};
 
 /**
  * Create an alias.
@@ -75,11 +106,11 @@ export function Alias<T extends TSchema>(
  * Return true if this is an alias schema.
  */
 export function isAlias(schema: unknown): schema is TAlias {
-  return Kind.Alias === (schema as TAlias)[KindSymbol];
+  return Kind.Alias === (schema as TSchema)[KindSymbol];
 }
 
 /**
- * Return the alias literal from the given alias.
+ * Return the alias literal from the given schema.
  */
 export function getAliasLiteral(schema: TAlias) {
   return schema[AliasLiteralSymbol];
@@ -90,8 +121,7 @@ export function getAliasLiteral(schema: TAlias) {
  * @example foo{title,description}
  */
 export interface TProjection<T extends TProperties = TProperties>
-  extends TObject<T>,
-    Expandable {
+  extends TObject<T> {
   [KindSymbol]: Kind.Projection;
 }
 
@@ -103,7 +133,6 @@ export function Projection<T extends TProperties>(
 ): TProjection<T> {
   const schema = Type.Object(properties) as TProjection<T>;
   schema[KindSymbol] = Kind.Projection;
-  schema[SupportsExpansionSymbol] = true;
   return schema;
 }
 
@@ -122,8 +151,7 @@ export interface TTypedProjection<
   T extends TProperties & { _type: TLiteral } = TProperties & {
     _type: TLiteral<any>;
   },
-> extends TObject<T>,
-    Expandable {
+> extends TObject<T> {
   [KindSymbol]: Kind.TypedProjection;
 }
 
@@ -136,10 +164,7 @@ export function TypedProjection<
   },
 >(properties: T): TTypedProjection<T> {
   const schema = Projection(properties) as unknown as TTypedProjection<T>;
-
   schema[KindSymbol] = Kind.TypedProjection;
-  schema[SupportsExpansionSymbol] = true;
-
   return schema;
 }
 
@@ -165,8 +190,7 @@ const unionFallbackProjection = Projection({
  */
 export interface TUnionProjection<
   T extends TTypedProjection[] = TTypedProjection[],
-> extends TUnion<[...T, typeof unionFallbackProjection]>,
-    Expandable {
+> extends TUnion<[...T, typeof unionFallbackProjection]> {
   [KindSymbol]: Kind.UnionProjection;
 }
 
@@ -178,10 +202,7 @@ export function UnionProjection<T extends TTypedProjection[]>(projections: T) {
     ...projections,
     unionFallbackProjection,
   ]) as unknown as TUnionProjection<T>;
-
   schema[KindSymbol] = Kind.UnionProjection;
-  schema[SupportsExpansionSymbol] = true;
-
   return schema;
 }
 
@@ -196,9 +217,7 @@ export function isUnionProjection(schema: unknown): schema is TUnionProjection {
  * Array of projections.
  * @example foo[]{title,description}
  */
-export interface TCollection<T extends TSchema = TSchema>
-  extends TArray<T>,
-    Expandable {
+export interface TCollection<T extends TSchema = TSchema> extends TArray<T> {
   [KindSymbol]: Kind.Collection;
 }
 
@@ -208,7 +227,6 @@ export interface TCollection<T extends TSchema = TSchema>
 export function Collection<T extends TSchema>(projection: T): TCollection<T> {
   const schema = Type.Array(projection) as TCollection<T>;
   schema[KindSymbol] = Kind.Collection;
-  schema[SupportsExpansionSymbol] = true;
   return schema;
 }
 
@@ -220,18 +238,9 @@ export function isCollection(schema: unknown): schema is TCollection {
 }
 
 /**
- * Schema which can be expanded (de-referenced).
- */
-interface Expandable {
-  [SupportsExpansionSymbol]: true;
-  [NeedExpansionSymbol]?: boolean;
-  [ConditionalExpansionTypeSymbol]?: string;
-}
-
-/**
  * Enable reference expansion for the given schema.
  */
-export function Expand<S extends Expandable>(schema: S): S {
+export function Expand<S extends TSchema>(schema: S): S {
   schema[NeedExpansionSymbol] = true;
   return schema;
 }
@@ -241,32 +250,11 @@ export function Expand<S extends Expandable>(schema: S): S {
  * This will expand the schema if it matches the given type (default "reference").
  * @see https://www.sanity.io/docs/query-cheat-sheet#a1da4a3b2adc
  */
-export function ConditionalExpand<S extends Expandable>(
+export function ConditionalExpand<S extends TSchema>(
   schema: S,
   { type = "reference" }: { type?: string } = {},
 ): S {
   schema[NeedExpansionSymbol] = true;
   schema[ConditionalExpansionTypeSymbol] = type;
   return schema;
-}
-
-/**
- * Return true if the given schema is expandable.
- */
-export function isExpandable(schema: unknown): schema is Expandable {
-  return !!(schema as Expandable)[SupportsExpansionSymbol];
-}
-
-/**
- * Return true if the given schema need expansion.
- */
-export function needsExpansion(schema: Expandable) {
-  return !!schema[NeedExpansionSymbol];
-}
-
-/**
- * Return expansion type for given expandable schema.
- */
-export function getConditionalExpansionType(schema: Expandable) {
-  return schema[ConditionalExpansionTypeSymbol] ?? null;
 }

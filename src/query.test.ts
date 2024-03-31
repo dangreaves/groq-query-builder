@@ -185,6 +185,24 @@ describe("grab", () => {
       `*[_type == "movie"][]{_type == "customReference" => @->{_type,name},_type != "customReference" => @{_type,name}}`,
     );
   });
+
+  test("unknown array type", () => {
+    const query = filterByType("movie").grab(
+      Schemas.Projection({ content: Schemas.Array(Schemas.Unknown()) }),
+    );
+
+    expect(query.serialize()).toBe(`*[_type == "movie"][]{content[]}`);
+  });
+
+  test("expanded unknown array type", () => {
+    const query = filterByType("movie").grab(
+      Schemas.Projection({
+        content: Schemas.Array(Schemas.Expand(Schemas.Unknown())),
+      }),
+    );
+
+    expect(query.serialize()).toBe(`*[_type == "movie"][]{content[]->}`);
+  });
 });
 
 describe("slice", () => {

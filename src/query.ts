@@ -68,9 +68,9 @@ export abstract class BaseQuery<T extends TSchema> {
    * Recursively serialize the given schema to a GROQ projection string.
    */
   protected serializeProjection(schema: TSchema): string {
-    if (TypeGuard.IsUnknown(schema)) return "";
-
     const innerProjection = (() => {
+      if (TypeGuard.IsUnknown(schema)) return "";
+
       if (isUnionProjection(schema)) {
         return `{...select(${this.serializeUnionConditions(schema)})}`;
       }
@@ -97,9 +97,11 @@ export abstract class BaseQuery<T extends TSchema> {
           attributes.push(
             !projection
               ? key // naked key
-              : /^\[?\]?-?>?{/.test(projection) // test for []->{ with or without the array/ref parts
-                ? `${key}${projection}` // {} don't need quotes on key
-                : `"${key}":${projection}`, // other types need quoted keys,
+              : projection.startsWith("[") ||
+                  projection.startsWith("{") ||
+                  projection.startsWith("->")
+                ? `${key}${projection}` // don't need quotes on key
+                : `"${key}":${projection}`, // other types need quoted keys (e.g. literals or references to other fields)
           );
         }
 
@@ -136,7 +138,6 @@ export abstract class BaseQuery<T extends TSchema> {
    * Wrap the given GROQ query with an expansion if enabled.
    */
   protected wrapExpansionQuery(schema: TSchema, query: string) {
-    if (!isExpandable(schema)) return query;
     if (!needsExpansion(schema)) return query;
 
     const conditionalExpansionType = getConditionalExpansionType(schema);
