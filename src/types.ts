@@ -1,4 +1,4 @@
-import type { Static, TArray, TUnion, TNull } from "@sinclair/typebox";
+import type { Static, TArray, TUnion, TNull, TSchema } from "@sinclair/typebox";
 
 import type { BaseQuery, ArrayQuery } from "./query";
 
@@ -11,3 +11,8 @@ export type InferFromQuery<Q extends BaseQuery<any>> =
     : Q extends BaseQuery<infer S>
       ? Static<TUnion<[S, TNull]>> // Entity queries will return null if not found.
       : never;
+
+/**
+ * Infer type from the given schema.
+ */
+export type InferFromSchema<T extends TSchema> = Static<T>;
