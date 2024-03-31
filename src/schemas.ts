@@ -48,13 +48,6 @@ declare module "@sinclair/typebox" {
 }
 
 /**
- * Return kind from the given schema.
- */
-export function getKind(schema: TSchema) {
-  return schema[KindSymbol];
-}
-
-/**
  * Return true if the given schema needs expansion
  */
 export function needsExpansion(schema: TSchema) {
@@ -72,7 +65,6 @@ export function getConditionalExpansionType(schema: TSchema) {
  * Enum of possible kind values.
  */
 enum Kind {
-  TypedProjection = "TypedProjection",
   UnionProjection = "UnionProjection",
 }
 
@@ -115,32 +107,21 @@ export function getAliasLiteral(schema: TAlias) {
  * Projection of attributes with the _type attribute defined.
  * @example foo{_type,title,description}
  */
-export interface TTypedProjection<
+export type TTypedObject<
   T extends TProperties & { _type: TLiteral } = TProperties & {
-    _type: TLiteral<any>;
+    _type: TLiteral<string>;
   },
-> extends TObject<T> {
-  [KindSymbol]: Kind.TypedProjection;
-}
+> = TObject<T>;
 
 /**
  * Create a projection of attributes with the _type attribute defined.
  */
-export function TypedProjection<
+export function TypedObject<
   T extends TProperties & { _type: TLiteral } = TProperties & {
-    _type: TLiteral<any>;
+    _type: TLiteral<string>;
   },
->(properties: T): TTypedProjection<T> {
-  const schema = Type.Object(properties) as unknown as TTypedProjection<T>;
-  schema[KindSymbol] = Kind.TypedProjection;
-  return schema;
-}
-
-/**
- * Return true if this is a typed projection schema.
- */
-export function isTypedProjection(schema: unknown): schema is TTypedProjection {
-  return Kind.TypedProjection === (schema as TTypedProjection)[KindSymbol];
+>(properties: T): TTypedObject<T> {
+  return Type.Object(properties);
 }
 
 /**
@@ -152,20 +133,19 @@ const unionFallbackProjection = Type.Object({
 });
 
 /**
- * Projection which uses the select operator to return a union of typed projections.
+ * Projection which uses the select operator to return a union of typed objects.
  * @see https://www.sanity.io/docs/query-cheat-sheet#64a36d80be73
  * @example foo{...select(_type == "person" => {name},_type == "company" => {companyName})}
  */
-export interface TUnionProjection<
-  T extends TTypedProjection[] = TTypedProjection[],
-> extends TUnion<[...T, typeof unionFallbackProjection]> {
+export interface TUnionProjection<T extends TTypedObject[] = TTypedObject[]>
+  extends TUnion<[...T, typeof unionFallbackProjection]> {
   [KindSymbol]: Kind.UnionProjection;
 }
 
 /**
  * Create a union from the given typed projections.
  */
-export function UnionProjection<T extends TTypedProjection[]>(projections: T) {
+export function UnionProjection<T extends TTypedObject[]>(projections: T) {
   const schema = Type.Union([
     ...projections,
     unionFallbackProjection,

@@ -8,7 +8,6 @@ import {
   getAliasLiteral,
   TUnionProjection,
   isUnionProjection,
-  isTypedProjection,
   getConditionalExpansionType,
 } from "./schemas";
 
@@ -114,7 +113,7 @@ export abstract class BaseQuery<T extends TSchema> {
     let conditions: string[] = [];
 
     for (const schemaVariant of schema.anyOf) {
-      if (isTypedProjection(schemaVariant)) {
+      if ("unknown" !== schemaVariant.properties._type.const) {
         conditions.push(
           `_type == "${schemaVariant.properties._type.const}" => ${this.serializeProjection(schemaVariant)}`,
         );

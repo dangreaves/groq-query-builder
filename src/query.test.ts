@@ -115,11 +115,11 @@ describe("grab", () => {
     const query = filterByType("movie").grab(
       Schemas.Object({
         producer: Schemas.UnionProjection([
-          Schemas.TypedProjection({
+          Schemas.TypedObject({
             _type: Schemas.Literal("person"),
             name: Schemas.String(),
           }),
-          Schemas.TypedProjection({
+          Schemas.TypedObject({
             _type: Schemas.Literal("company"),
             companyName: Schemas.String(),
           }),
@@ -137,11 +137,11 @@ describe("grab", () => {
       Schemas.Object({
         producer: Schemas.Expand(
           Schemas.UnionProjection([
-            Schemas.TypedProjection({
+            Schemas.TypedObject({
               _type: Schemas.Literal("person"),
               name: Schemas.String(),
             }),
-            Schemas.TypedProjection({
+            Schemas.TypedObject({
               _type: Schemas.Literal("company"),
               companyName: Schemas.String(),
             }),
@@ -158,7 +158,7 @@ describe("grab", () => {
   test("grab conditional expanded projection", () => {
     const query = filterByType("movie").grab(
       Schemas.ConditionalExpand(
-        Schemas.TypedProjection({
+        Schemas.TypedObject({
           _type: Schemas.Literal("person"),
           name: Schemas.String(),
         }),
@@ -173,7 +173,7 @@ describe("grab", () => {
   test("grab conditional expanded projection with custom type", () => {
     const query = filterByType("movie").grab(
       Schemas.ConditionalExpand(
-        Schemas.TypedProjection({
+        Schemas.TypedObject({
           _type: Schemas.Literal("person"),
           name: Schemas.String(),
         }),
