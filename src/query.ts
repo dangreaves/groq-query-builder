@@ -4,8 +4,6 @@ import type { TSchema, TArray } from "@sinclair/typebox";
 
 import {
   isAlias,
-  isExpandable,
-  isCollection,
   needsExpansion,
   getAliasLiteral,
   TUnionProjection,
@@ -46,7 +44,7 @@ export abstract class BaseQuery<T extends TSchema> {
     /**
      * Append slice conditions.
      * If no slice conditions applied, then [] is added, because Sanity will return an array.
-     * @todo Could refactor this to be part of the Collection schema along with filter?
+     * @todo Could refactor this to be part of the array schema along with filter?
      */
     if (this.payload.slice) {
       if ("undefined" !== typeof this.payload.slice.to) {
@@ -77,11 +75,6 @@ export abstract class BaseQuery<T extends TSchema> {
 
       if (isAlias(schema)) {
         return getAliasLiteral(schema);
-      }
-
-      if (isCollection(schema)) {
-        // @todo Maybe fetch filter and slice information here to allow nested filters.
-        return `[]${this.serializeProjection(schema.items)}`;
       }
 
       if (TypeGuard.IsArray(schema)) {
@@ -208,7 +201,7 @@ export class ArrayQuery<T extends TSchema> extends BaseQuery<T> {
   }
 
   /**
-   * Slice the collection.
+   * Slice the array.
    */
   slice(from: Slice["from"], to?: Slice["to"]) {
     return new EntityQuery({

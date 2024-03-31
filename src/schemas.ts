@@ -76,7 +76,6 @@ enum Kind {
   Projection = "Projection",
   TypedProjection = "TypedProjection",
   UnionProjection = "UnionProjection",
-  Collection = "Collection",
 }
 
 /**
@@ -211,30 +210,6 @@ export function UnionProjection<T extends TTypedProjection[]>(projections: T) {
  */
 export function isUnionProjection(schema: unknown): schema is TUnionProjection {
   return Kind.UnionProjection === (schema as TUnionProjection)[KindSymbol];
-}
-
-/**
- * Array of projections.
- * @example foo[]{title,description}
- */
-export interface TCollection<T extends TSchema = TSchema> extends TArray<T> {
-  [KindSymbol]: Kind.Collection;
-}
-
-/**
- * Create an array of projections.
- */
-export function Collection<T extends TSchema>(projection: T): TCollection<T> {
-  const schema = Type.Array(projection) as TCollection<T>;
-  schema[KindSymbol] = Kind.Collection;
-  return schema;
-}
-
-/**
- * Return true if this is a collection schema.
- */
-export function isCollection(schema: unknown): schema is TCollection {
-  return Kind.Collection === (schema as TCollection)[KindSymbol];
 }
 
 /**

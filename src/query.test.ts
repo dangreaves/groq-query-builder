@@ -55,12 +55,12 @@ describe("grab", () => {
     );
   });
 
-  test("grab nested collection", () => {
+  test("grab nested array", () => {
     const query = filterByType("movie").grab(
       Schemas.Projection({
         title: Schemas.String(),
         description: Schemas.String(),
-        categories: Schemas.Collection(
+        categories: Schemas.Array(
           Schemas.Projection({
             name: Schemas.String(),
           }),
@@ -73,12 +73,12 @@ describe("grab", () => {
     );
   });
 
-  test("grab nested reference collection", () => {
+  test("grab nested reference array", () => {
     const query = filterByType("movie").grab(
       Schemas.Projection({
         title: Schemas.String(),
         description: Schemas.String(),
-        categories: Schemas.Collection(
+        categories: Schemas.Array(
           Schemas.Expand(
             Schemas.Projection({
               name: Schemas.String(),
