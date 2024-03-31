@@ -17,7 +17,8 @@ export type Slice = { from: number; to?: number | undefined };
 export type QueryPayload<T extends TSchema> = {
   schema: T;
   slice?: Slice;
-  filters: string[];
+  filters?: string[];
+  rawQuery?: string;
 };
 
 export abstract class BaseQuery<T extends TSchema> {
@@ -34,11 +35,13 @@ export abstract class BaseQuery<T extends TSchema> {
    * Serialize the query to a GROQ string.
    */
   serialize(): string {
-    let query = ["*"];
+    let query = [this.payload.rawQuery ?? "*"];
 
     // Append filters.
-    for (const filter of this.payload.filters) {
-      query.push(`[${filter}]`);
+    if (this.payload.filters) {
+      for (const filter of this.payload.filters) {
+        query.push(`[${filter}]`);
+      }
     }
 
     /**
@@ -52,7 +55,7 @@ export abstract class BaseQuery<T extends TSchema> {
       } else {
         query.push(`[${this.payload.slice.from}]`);
       }
-    } else {
+    } else if (!this.payload.rawQuery) {
       query.push("[]");
     }
 
@@ -170,7 +173,7 @@ export class EntityQuery<T extends TSchema> extends BaseQuery<T> {
   filter(filterCondition: string) {
     return new EntityQuery({
       ...this.payload,
-      filters: [...this.payload.filters, filterCondition],
+      filters: [...(this.payload.filters ?? []), filterCondition],
     });
   }
 }
@@ -199,7 +202,7 @@ export class ArrayQuery<T extends TSchema> extends BaseQuery<T> {
   filter(filterCondition: string) {
     return new EntityQuery({
       ...this.payload,
-      filters: [...this.payload.filters, filterCondition],
+      filters: [...(this.payload.filters ?? []), filterCondition],
     });
   }
 
@@ -230,5 +233,25 @@ export function filterByType(type: string, additionalFilter?: string) {
     filters: [
       `_type == "${type}"${additionalFilter ? ` && ${additionalFilter}` : ""}`,
     ],
+  });
+}
+
+/**
+ * Construct an entity query with a raw query string;
+ */
+export function rawEntityQuery(rawQuery: string) {
+  return new EntityQuery({
+    rawQuery,
+    schema: Type.Unknown(),
+  });
+}
+
+/**
+ * Construct an array query with a raw query string;
+ */
+export function rawArrayQuery(rawQuery: string) {
+  return new ArrayQuery({
+    rawQuery,
+    schema: Type.Unknown(),
   });
 }

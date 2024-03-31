@@ -2,7 +2,7 @@ import { expect, test, describe } from "vitest";
 
 import * as Schemas from "./schemas";
 
-import { filterByType } from "./query";
+import { filterByType, rawEntityQuery } from "./query";
 
 describe("grab", () => {
   test("grab simple object", () => {
@@ -295,6 +295,23 @@ describe("filter", () => {
 
     expect(query.serialize()).toBe(
       `*[_type == "movie"][genre == "comedy"][]{title,description}`,
+    );
+  });
+});
+
+describe("raw query", () => {
+  test("raw entity query", () => {
+    const query = rawEntityQuery(
+      `*[_type == 'pageFlexible'][slug.current == $slug && i18n_lang == null][0]["content"][0]`,
+    ).grab(
+      Schemas.Object({
+        title: Schemas.String(),
+        description: Schemas.String(),
+      }),
+    );
+
+    expect(query.serialize()).toBe(
+      `*[_type == 'pageFlexible'][slug.current == $slug && i18n_lang == null][0]["content"][0]{title,description}`,
     );
   });
 });
