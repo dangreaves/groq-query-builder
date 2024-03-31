@@ -4,5 +4,6 @@
     "noEmit": true,
     "module": "ESNext",
     "moduleResolution": "Bundler"
-  }
+  },
+  "include": ["src"]
 }

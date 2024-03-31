@@ -24,7 +24,7 @@
   "scripts": {
     "test": "vitest",
     "prepublishOnly": "pnpm run build",
-    "build": "tsup src/index.ts --dts --format esm,cjs --clean"
+    "build": "tsc && tsup src/index.ts --dts --format esm,cjs --clean"
   },
   "dependencies": {
     "@sinclair/typebox": "^0.32.20"
