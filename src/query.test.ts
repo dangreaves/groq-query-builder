@@ -33,6 +33,23 @@ describe("grab", () => {
     );
   });
 
+  test("grab nullable nested object", () => {
+    const query = filterByType("movie").grab(
+      Schemas.Object({
+        metadata: Schemas.Nullable(
+          Schemas.Object({
+            keywords: Schemas.String(),
+            isReleased: Schemas.Boolean(),
+          }),
+        ),
+      }),
+    );
+
+    expect(query.serialize()).toBe(
+      `*[_type == "movie"][]{metadata{keywords,isReleased}}`,
+    );
+  });
+
   test("grab nested reference", () => {
     const query = filterByType("movie").grab(
       Schemas.Object({
@@ -55,6 +72,22 @@ describe("grab", () => {
     );
   });
 
+  test("grab nullable nested reference", () => {
+    const query = filterByType("movie").grab(
+      Schemas.Object({
+        author: Schemas.Nullable(
+          Schemas.Expand(
+            Schemas.Object({
+              name: Schemas.String(),
+            }),
+          ),
+        ),
+      }),
+    );
+
+    expect(query.serialize()).toBe(`*[_type == "movie"][]{author->{name}}`);
+  });
+
   test("grab nested array", () => {
     const query = filterByType("movie").grab(
       Schemas.Object({
@@ -71,6 +104,22 @@ describe("grab", () => {
     expect(query.serialize()).toBe(
       `*[_type == "movie"][]{title,description,categories[]{name}}`,
     );
+  });
+
+  test("grab nullable nested array", () => {
+    const query = filterByType("movie").grab(
+      Schemas.Object({
+        categories: Schemas.Nullable(
+          Schemas.Array(
+            Schemas.Object({
+              name: Schemas.String(),
+            }),
+          ),
+        ),
+      }),
+    );
+
+    expect(query.serialize()).toBe(`*[_type == "movie"][]{categories[]{name}}`);
   });
 
   test("grab nested reference array", () => {
@@ -93,21 +142,23 @@ describe("grab", () => {
     );
   });
 
-  test("grab nested array", () => {
+  test("grab nullable nested reference array", () => {
     const query = filterByType("movie").grab(
       Schemas.Object({
-        title: Schemas.String(),
-        description: Schemas.String(),
-        categories: Schemas.Array(
-          Schemas.Object({
-            name: Schemas.String(),
-          }),
+        categories: Schemas.Nullable(
+          Schemas.Array(
+            Schemas.Expand(
+              Schemas.Object({
+                name: Schemas.String(),
+              }),
+            ),
+          ),
         ),
       }),
     );
 
     expect(query.serialize()).toBe(
-      `*[_type == "movie"][]{title,description,categories[]{name}}`,
+      `*[_type == "movie"][]{categories[]->{name}}`,
     );
   });
 

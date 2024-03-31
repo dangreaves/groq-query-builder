@@ -4,6 +4,7 @@ import type { TSchema, TArray } from "@sinclair/typebox";
 
 import {
   isAlias,
+  isNullable,
   TTypedUnion,
   isTypedUnion,
   needsExpansion,
@@ -66,6 +67,9 @@ export abstract class BaseQuery<T extends TSchema> {
    */
   protected serializeProjection(schema: TSchema): string {
     const innerProjection = (() => {
+      // For nullable unions, extract the actual schema.
+      schema = isNullable(schema) ? schema.anyOf[0] : schema;
+
       if (TypeGuard.IsUnknown(schema)) return "";
 
       if (isTypedUnion(schema)) {

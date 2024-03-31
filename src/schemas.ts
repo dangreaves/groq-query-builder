@@ -1,6 +1,7 @@
-import { Type } from "@sinclair/typebox";
+import { Type, TypeGuard } from "@sinclair/typebox";
 
 import type {
+  TNull,
   TUnion,
   TSchema,
   TObject,
@@ -26,6 +27,17 @@ export {
  */
 export const Nullable = <T extends TSchema>(schema: T) =>
   Type.Union([schema, Type.Null()]);
+
+/**
+ * Return true if the given schema is a nullable union.
+ */
+export function isNullable(value: unknown): value is TUnion<[TSchema, TNull]> {
+  return (
+    TypeGuard.IsUnion(value) &&
+    2 === value.anyOf.length &&
+    TypeGuard.IsNull(value.anyOf[1])
+  );
+}
 
 /**
  * Symbols for attaching attributes to schemas.
