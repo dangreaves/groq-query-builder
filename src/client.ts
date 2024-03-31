@@ -7,7 +7,7 @@ import type { BaseQuery } from "./query";
 import type { InferFromQuery } from "./types";
 
 export function makeSafeSanityFetch(
-  fn: (query: string, params?: Record<string, string>) => Promise<any>,
+  fn: (query: string, params?: Record<string, string | number>) => Promise<any>,
   {
     logger = pino(),
     validationMode = "ERROR",
