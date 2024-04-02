@@ -7,14 +7,15 @@ import type {
   TSchema,
   TObject,
   TLiteral,
+  TString,
   TProperties,
+  TArray as _TArray,
 } from "@sinclair/typebox";
 
 /**
  * Export useful TypeBox types.
  */
 export {
-  Array,
   String,
   Number,
   Object,
@@ -23,16 +24,23 @@ export {
   Unknown,
 } from "@sinclair/typebox";
 
+import { decorateKey } from "./decorators";
+
 /**
  * Allow the given schema to be null.
  */
-export const Nullable = <T extends TSchema>(schema: T) =>
+export type TNullable<T extends TSchema = TSchema> = TUnion<[T, TNull]>;
+
+/**
+ * Allow the given schema to be null.
+ */
+export const Nullable = <T extends TSchema>(schema: T): TNullable<T> =>
   Type.Union([schema, Type.Null()]);
 
 /**
  * Return true if the given schema is a nullable union.
  */
-export function isNullable(value: unknown): value is TUnion<[TSchema, TNull]> {
+export function isNullable(value: unknown): value is TNullable {
   return (
     TypeGuard.IsUnion(value) &&
     2 === value.anyOf.length &&
@@ -79,6 +87,27 @@ export function getConditionalExpansionType(schema: TSchema) {
  */
 enum Kind {
   TypedUnion = "TypedUnion",
+}
+
+/**
+ * Array schema which includes "_key" for objects.
+ * @see https://www.sanity.io/docs/array-type
+ */
+export type TArray<T extends TSchema = TSchema> =
+  T extends TObject<infer P>
+    ? _TArray<TObject<P & { _key: TString }>>
+    : _TArray<T>;
+
+/**
+ * Create an array schema.
+ */
+export function Array<T extends TSchema = TSchema>(schema: T): TArray<T> {
+  if (TypeGuard.IsObject(schema)) {
+    // @ts-expect-error Type instantiation is excessively deep and possibly infinite.
+    schema = decorateKey(schema);
+  }
+
+  return Type.Array(schema) as TArray<T>;
 }
 
 /**

@@ -102,7 +102,7 @@ describe("grab", () => {
     );
 
     expect(query.serialize()).toBe(
-      `*[_type == "movie"][]{title,description,categories[]{name}}`,
+      `*[_type == "movie"][]{title,description,categories[]{_key,name}}`,
     );
   });
 
@@ -119,7 +119,19 @@ describe("grab", () => {
       }),
     );
 
-    expect(query.serialize()).toBe(`*[_type == "movie"][]{categories[]{name}}`);
+    expect(query.serialize()).toBe(
+      `*[_type == "movie"][]{categories[]{_key,name}}`,
+    );
+  });
+
+  test("key only included when array generic is an object", () => {
+    const query = filterByType("movie").grab(
+      Schemas.Object({
+        tags: Schemas.Array(Schemas.String()),
+      }),
+    );
+
+    expect(query.serialize()).toBe(`*[_type == "movie"][]{tags[]}`);
   });
 
   test("grab nested reference array", () => {
@@ -138,7 +150,7 @@ describe("grab", () => {
     );
 
     expect(query.serialize()).toBe(
-      `*[_type == "movie"][]{title,description,categories[]->{name}}`,
+      `*[_type == "movie"][]{title,description,categories[]->{_key,name}}`,
     );
   });
 
@@ -158,7 +170,7 @@ describe("grab", () => {
     );
 
     expect(query.serialize()).toBe(
-      `*[_type == "movie"][]{categories[]->{name}}`,
+      `*[_type == "movie"][]{categories[]->{_key,name}}`,
     );
   });
 
