@@ -1,3 +1,4 @@
+import { Value } from "@sinclair/typebox/value";
 import { Type, TypeGuard } from "@sinclair/typebox";
 
 import type {
@@ -95,10 +96,9 @@ export function Alias<T extends TSchema>(
   schema: T,
   aliasLiteral: string,
 ): TAlias<T> {
-  return {
-    ...schema,
-    [AliasLiteralSymbol]: aliasLiteral,
-  } as TAlias<T>;
+  const newSchema = Value.Clone(schema);
+  newSchema[AliasLiteralSymbol] = aliasLiteral;
+  return newSchema as TAlias<T>;
 }
 
 /**
@@ -177,8 +177,9 @@ export function isTypedUnion(schema: unknown): schema is TTypedUnion {
  * Enable reference expansion for the given schema.
  */
 export function Expand<S extends TSchema>(schema: S): S {
-  schema[NeedExpansionSymbol] = true;
-  return schema;
+  const newSchema = Value.Clone(schema);
+  newSchema[NeedExpansionSymbol] = true;
+  return newSchema;
 }
 
 /**
@@ -190,7 +191,8 @@ export function ConditionalExpand<S extends TSchema>(
   schema: S,
   { type = "reference" }: { type?: string } = {},
 ): S {
-  schema[NeedExpansionSymbol] = true;
-  schema[ConditionalExpansionTypeSymbol] = type;
-  return schema;
+  const newSchema = Value.Clone(schema);
+  newSchema[NeedExpansionSymbol] = true;
+  newSchema[ConditionalExpansionTypeSymbol] = type;
+  return newSchema;
 }
