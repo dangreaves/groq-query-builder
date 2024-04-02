@@ -6,8 +6,10 @@ import { Value, type ValueError } from "@sinclair/typebox/value";
 import type { BaseQuery } from "./query";
 import type { InferFromQuery } from "./types";
 
+type SanityParams = Record<string, string | number | null> | undefined;
+
 export function makeSafeSanityFetch(
-  fn: (query: string, params?: Record<string, string | number>) => Promise<any>,
+  fn: (query: string, params?: SanityParams) => Promise<any>,
   {
     logger = pino(),
     validationMode = "ERROR",
@@ -15,7 +17,7 @@ export function makeSafeSanityFetch(
 ) {
   return async function fetchSanity<T extends BaseQuery<any>>(
     query: T,
-    params?: Record<string, string | number>,
+    params?: SanityParams,
   ): Promise<InferFromQuery<T>> {
     // Serialize the query to a GROQ string.
     const groq = query.serialize();
@@ -27,7 +29,7 @@ export function makeSafeSanityFetch(
     const resultSchema = Type.Union([query.resolveSchema(), Type.Null()]);
 
     // Fetch result from Sanity.
-    const res = params ? await fn(groq, params) : await fn(groq);
+    const res = await fn(groq, params);
 
     // Log the GROQ response.
     logger.info({ res }, "Received GROQ response.");

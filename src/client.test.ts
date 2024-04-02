@@ -47,6 +47,7 @@ describe("makeSafeSanityFetch", () => {
 
     expect(mockFn).toHaveBeenCalledWith(
       `*[_type == "movie"][]{title,director{name}}`,
+      undefined,
     );
   });
 
