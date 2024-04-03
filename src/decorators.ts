@@ -1,21 +1,32 @@
-import { Type } from "@sinclair/typebox";
-import { Value } from "@sinclair/typebox/value";
+import { Type, TypeGuard } from "@sinclair/typebox";
 
-import type { TString, TObject } from "@sinclair/typebox";
+import type {
+  TUnion,
+  TSchema,
+  TString,
+  TObject,
+  TIntersect,
+} from "@sinclair/typebox";
 
 /**
  * Prepend the _key attribute to the given object schema.
  */
-export function decorateKey<T extends TObject>(
-  schema: T,
-): T extends TObject<infer P> ? TObject<P & { _key: TString }> : never {
-  const newSchema = Value.Clone(schema);
+export type TWithKey<T extends TSchema> = T extends TUnion
+  ? TIntersect<[T, TObject<{ _key: TString }>]>
+  : T extends TObject
+    ? TIntersect<[T, TObject<{ _key: TString }>]>
+    : T;
 
-  newSchema.properties = Object.assign(
-    { _key: Type.String() },
-    newSchema.properties,
-  );
+/**
+ * Prepend the _key attribute to the given object or union schema.
+ */
+export function decorateKey<T extends TSchema>(schema: T): TWithKey<T> {
+  if (!TypeGuard.IsObject(schema) && !TypeGuard.IsUnion(schema)) {
+    return schema as TWithKey<T>;
+  }
 
-  // @ts-expect-error
-  return newSchema;
+  return Type.Intersect([
+    schema,
+    Type.Object({ _key: Type.String() }),
+  ]) as TWithKey<T>;
 }

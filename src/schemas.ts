@@ -7,7 +7,6 @@ import type {
   TSchema,
   TObject,
   TLiteral,
-  TString,
   TProperties,
   TArray as _TArray,
 } from "@sinclair/typebox";
@@ -24,7 +23,7 @@ export {
   Unknown,
 } from "@sinclair/typebox";
 
-import { decorateKey } from "./decorators";
+import { decorateKey, type TWithKey } from "./decorators";
 
 /**
  * Allow the given schema to be null.
@@ -93,21 +92,13 @@ enum Kind {
  * Array schema which includes "_key" for objects.
  * @see https://www.sanity.io/docs/array-type
  */
-export type TArray<T extends TSchema = TSchema> =
-  T extends TObject<infer P>
-    ? _TArray<TObject<P & { _key: TString }>>
-    : _TArray<T>;
+export type TArray<T extends TSchema = TSchema> = _TArray<TWithKey<T>>;
 
 /**
  * Create an array schema.
  */
 export function Array<T extends TSchema = TSchema>(schema: T): TArray<T> {
-  if (TypeGuard.IsObject(schema)) {
-    // @ts-expect-error Type instantiation is excessively deep and possibly infinite.
-    schema = decorateKey(schema);
-  }
-
-  return Type.Array(schema) as TArray<T>;
+  return Type.Array(decorateKey(schema));
 }
 
 /**

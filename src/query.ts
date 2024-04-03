@@ -1,6 +1,6 @@
 import { Type, TypeGuard } from "@sinclair/typebox";
 
-import type { TSchema, TArray } from "@sinclair/typebox";
+import type { TSchema, TArray, TObject } from "@sinclair/typebox";
 
 import {
   isAlias,
@@ -73,10 +73,28 @@ export abstract class BaseQuery<T extends TSchema> {
       // For nullable unions, extract the actual schema.
       schema = isNullable(schema) ? schema.anyOf[0] : schema;
 
+      /**
+       * For two-way intersections where the second member is an object, calculate the "additional"
+       * attributes from the second member, then swap the schema for the first one.
+       */
+      let additionalProperties: string[] = [];
+      if (
+        TypeGuard.IsIntersect(schema) &&
+        2 === schema.allOf.length &&
+        TypeGuard.IsSchema(schema.allOf[0]) &&
+        TypeGuard.IsObject(schema.allOf[1])
+      ) {
+        additionalProperties = this.serializeObjectToProjection(
+          schema.allOf[1],
+        ).split(",");
+
+        schema = schema.allOf[0];
+      }
+
       if (TypeGuard.IsUnknown(schema)) return "";
 
       if (isTypedUnion(schema)) {
-        return `{...select(${this.serializeUnionConditions(schema)})}`;
+        return `{${[...additionalProperties, `...select(${this.serializeUnionConditions(schema)})`].join(",")}}`;
       }
 
       if (isAlias(schema)) {
@@ -88,29 +106,36 @@ export abstract class BaseQuery<T extends TSchema> {
       }
 
       if (TypeGuard.IsObject(schema)) {
-        let attributes: string[] = [];
-
-        for (const [key, value] of Object.entries(schema.properties)) {
-          const projection = this.serializeProjection(value);
-
-          attributes.push(
-            !projection
-              ? key // naked key
-              : projection.startsWith("[") ||
-                  projection.startsWith("{") ||
-                  projection.startsWith("->")
-                ? `${key}${projection}` // don't need quotes on key
-                : `"${key}":${projection}`, // other types need quoted keys (e.g. literals or references to other fields)
-          );
-        }
-
-        return `{${attributes.join(",")}}`;
+        return `{${[...additionalProperties, this.serializeObjectToProjection(schema)].join(",")}}`;
       }
 
       return "";
     })();
 
     return this.wrapExpansionQuery(schema, innerProjection);
+  }
+
+  /**
+   * Serialize the given object schema to a projection string.
+   */
+  protected serializeObjectToProjection(schema: TObject): string {
+    let attributes: string[] = [];
+
+    for (const [key, value] of Object.entries(schema.properties)) {
+      const projection = this.serializeProjection(value);
+
+      attributes.push(
+        !projection
+          ? key // naked key
+          : projection.startsWith("[") ||
+              projection.startsWith("{") ||
+              projection.startsWith("->")
+            ? `${key}${projection}` // don't need quotes on key
+            : `"${key}":${projection}`, // other types need quoted keys (e.g. literals or references to other fields)
+      );
+    }
+
+    return attributes.join(",");
   }
 
   /**
@@ -139,10 +164,17 @@ export abstract class BaseQuery<T extends TSchema> {
   protected wrapExpansionQuery(schema: TSchema, query: string) {
     if (!needsExpansion(schema)) return query;
 
+    // If query contains a _key, that need to be *outside* of the expansion.
+    const additionalProperties: string[] = [];
+    if (query.includes("_key")) {
+      query = query.replace(/,?_key,?/, ""); // Remove _key from the inner query.
+      additionalProperties.push("_key");
+    }
+
     const conditionalExpansionType = getConditionalExpansionType(schema);
 
     if (conditionalExpansionType) {
-      return `{_type == "${conditionalExpansionType}" => @->${query},_type != "${conditionalExpansionType}" => @${query}}`;
+      return `{${[...additionalProperties, `_type == "${conditionalExpansionType}" => @->${query},_type != "${conditionalExpansionType}" => @${query}}`].join(",")}`;
     }
 
     return `->${query}`;

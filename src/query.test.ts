@@ -150,7 +150,7 @@ describe("grab", () => {
     );
 
     expect(query.serialize()).toBe(
-      `*[_type == "movie"][]{title,description,categories[]->{_key,name}}`,
+      `*[_type == "movie"][]{title,description,categories[]->{name}}`,
     );
   });
 
@@ -170,7 +170,7 @@ describe("grab", () => {
     );
 
     expect(query.serialize()).toBe(
-      `*[_type == "movie"][]{categories[]->{_key,name}}`,
+      `*[_type == "movie"][]{categories[]->{name}}`,
     );
   });
 
@@ -218,6 +218,29 @@ describe("grab", () => {
     );
   });
 
+  test("grab array of typed unions", () => {
+    const query = filterByType("movie").grab(
+      Schemas.Object({
+        producers: Schemas.Array(
+          Schemas.TypedUnion([
+            Schemas.TypedObject({
+              _type: Schemas.Literal("person"),
+              name: Schemas.String(),
+            }),
+            Schemas.TypedObject({
+              _type: Schemas.Literal("company"),
+              companyName: Schemas.String(),
+            }),
+          ]),
+        ),
+      }),
+    );
+
+    expect(query.serialize()).toBe(
+      `*[_type == "movie"][]{producers[]{_key,...select(_type == "person" => {_type,name},_type == "company" => {_type,companyName},{"_type":"unknown","_rawType":_type})}}`,
+    );
+  });
+
   test("grab conditional expanded typed object", () => {
     const query = filterByType("movie").grab(
       Schemas.ConditionalExpand(
@@ -246,6 +269,25 @@ describe("grab", () => {
 
     expect(query.serialize()).toBe(
       `*[_type == "movie"][]{_type == "customReference" => @->{_type,name},_type != "customReference" => @{_type,name}}`,
+    );
+  });
+
+  test("grab array of conditional expanded typed object", () => {
+    const query = filterByType("movie").grab(
+      Schemas.Object({
+        sections: Schemas.Array(
+          Schemas.ConditionalExpand(
+            Schemas.TypedObject({
+              _type: Schemas.Literal("person"),
+              name: Schemas.String(),
+            }),
+          ),
+        ),
+      }),
+    );
+
+    expect(query.serialize()).toBe(
+      `*[_type == "movie"][]{sections[]{_key,_type == "reference" => @->{_type,name},_type != "reference" => @{_type,name}}}`,
     );
   });
 
