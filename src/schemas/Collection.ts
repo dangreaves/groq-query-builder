@@ -5,6 +5,7 @@ import {
   TObject,
   TString,
   TIntersect,
+  TypeGuard,
 } from "@sinclair/typebox";
 
 import type { TSerializer } from "../types";
@@ -20,7 +21,7 @@ export type TCollectionOptions = { filter?: string; slice?: [number, number] };
  * Fetch an array of items with optional filter and slicing.
  */
 export type TCollection<T extends TSchema = TSchema> = TArray<
-  TIntersect<[T, TObject<{ _key: TNullable<TString> }>]>
+  T extends TObject ? TIntersect<[T, TObject<{ _key: TNullable<TString> }>]> : T
 > & {
   __options__?: TCollectionOptions;
   __inner_schema__: T;
@@ -53,7 +54,7 @@ function serialize(this: TCollection) {
   }
 
   /**
-   * Prepend projection with outer key attribute.
+   * Prepend projection with outer key attribute if array contains object.
    *
    * This spread syntax means we never have to change this formatting based on what is inside
    * the child projection. The _key will always be on the "outside", regardless of if the
@@ -61,7 +62,9 @@ function serialize(this: TCollection) {
    *
    * @see https://www.sanity.io/answers/is-there-a-way-to-get-the-key-in-an-array-p1599730869291100
    */
-  groq.push(`{_key,...@${this.__inner_schema__.serialize?.() ?? ""}}`);
+  if (TypeGuard.IsObject(this.__inner_schema__)) {
+    groq.push(`{_key,...@${this.__inner_schema__.serialize?.() ?? ""}}`);
+  }
 
   return groq.join("");
 }
@@ -109,9 +112,12 @@ export function Collection<T extends TSchema = TSchema>(
   schema: T,
   options?: TCollectionOptions,
 ): TCollection<T> {
-  const arraySchema = Type.Array(
-    Type.Intersect([schema, Type.Object({ _key: Nullable(Type.String()) })]),
-  ) as TCollection<T>;
+  const arrayMemberSchema = TypeGuard.IsObject(schema)
+    ? Type.Intersect([schema, Type.Object({ _key: Nullable(Type.String()) })])
+    : schema;
+
+  // @ts-ignore TypeScript complains about type depth. Just trust me :(
+  const arraySchema = Type.Array(arrayMemberSchema) as TCollection<T>;
 
   arraySchema.__inner_schema__ = schema;
 

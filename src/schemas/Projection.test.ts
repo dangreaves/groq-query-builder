@@ -114,7 +114,7 @@ describe("key formatting", () => {
       invoices: S.Collection(S.Unknown()),
     });
 
-    expect(schema.serialize()).toBe(`{name,invoices[]{_key,...@}}`);
+    expect(schema.serialize()).toBe(`{name,invoices[]}`);
   });
 });
 

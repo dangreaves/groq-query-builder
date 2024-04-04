@@ -112,3 +112,15 @@ describe("nesting", () => {
     expect(schema.serialize()).toBe(`{movies[]{_key,...@{_type,name,genre}}}`);
   });
 });
+
+describe("serialization", () => {
+  test("collection of unknown serializes without projection", () => {
+    const schema = S.Collection(S.Unknown());
+    expect(schema.serialize()).toBe(`[]`);
+  });
+
+  test("collection of string serializes without projection", () => {
+    const schema = S.Collection(S.String());
+    expect(schema.serialize()).toBe(`[]`);
+  });
+});
