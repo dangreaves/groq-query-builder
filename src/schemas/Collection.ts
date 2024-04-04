@@ -12,6 +12,13 @@ import type { TPrimitive } from "./types";
 import { Nullable, TNullable } from "./Nullable";
 
 /**
+ * Options available when creating a collection.
+ */
+export type TCollectionOptions =
+  | { filter?: string; slice?: [number, number] }
+  | undefined;
+
+/**
  * Fetch an array of items with optional filter and slicing.
  */
 export type TCollection<T extends TSchema> = T extends TPrimitive
@@ -23,8 +30,10 @@ export type TCollection<T extends TSchema> = T extends TPrimitive
  */
 export function Collection<T extends TSchema = TSchema>(
   schema: T,
-  { filter, slice }: { filter?: string; slice?: [number, number] } = {},
+  options: TCollectionOptions,
 ): TCollection<T> {
+  const { slice, filter } = options ?? {};
+
   let groq = "";
 
   // Append filter if provided.
