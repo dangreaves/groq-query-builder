@@ -34,13 +34,13 @@ export function makeSafeSanityFetch(
     }
 
     // Log the GROQ query.
-    logger.info({ query: groq }, "Sending GROQ query.");
+    logger.debug({ query: groq }, "Sending GROQ query.");
 
     // Fetch result from Sanity.
     const res = await fn(groq, params);
 
     // Log the GROQ response.
-    logger.info({ res }, "Received GROQ response.");
+    logger.debug({ res }, "Received GROQ response.");
 
     // Converted result.
     const result = Value.Convert(resultSchema, res);
