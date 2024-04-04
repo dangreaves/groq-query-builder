@@ -49,28 +49,28 @@ export function Collection<T extends TSchema = TSchema>(
 ): TCollection<T> {
   const { slice, filter } = options ?? {};
 
-  let groq = "";
+  const groq: string[] = [];
 
   // Append filter if provided.
   if (filter) {
-    groq += `[${filter}]`;
+    groq.push(`[${filter}]`);
   }
 
   // Append slice if provided.
   if (slice) {
-    groq += `[${slice[0]}...${slice[1]}]`;
+    groq.push(`[${slice[0]}...${slice[1]}]`);
   }
 
   // No filter or slice provided, append empty [] to force array.
   if (!filter && !slice) {
-    groq += "[]";
+    groq.push("[]");
   }
 
   // Calculate an outer schema.
   const outerSchema = (() => {
     // There is no projection groq, return naked.
     if (!schema.groq) {
-      return Type.Array(schema, { groq }) as TCollection<T>;
+      return Type.Array(schema, { groq: groq.join("") }) as TCollection<T>;
     }
 
     /**
@@ -82,12 +82,12 @@ export function Collection<T extends TSchema = TSchema>(
      *
      * @see https://www.sanity.io/answers/is-there-a-way-to-get-the-key-in-an-array-p1599730869291100
      */
-    groq += `{_key,...@${schema.groq}}`;
+    groq.push(`{_key,...@${schema.groq}}`);
 
     // Return an intersect schema such that _key is added to the return type.
     return Type.Array(
       Type.Intersect([schema, Type.Object({ _key: Nullable(Type.String()) })]),
-      { groq },
+      { groq: groq.join("") },
     ) as TCollection<T>;
   })();
 

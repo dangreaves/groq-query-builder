@@ -40,7 +40,7 @@ export function ConditionalUnion<
 >(conditions: T, options?: TConditionalUnionOptions): TConditionalUnion<T> {
   const { expandReference } = options ?? {};
 
-  let groq = "";
+  const groq: string[] = [];
 
   // Calculate a set of conditions for select().
   const selectConditions = Object.entries(conditions)
@@ -60,24 +60,28 @@ export function ConditionalUnion<
 
   // Wrap in a reference expansion.
   if (true === expandReference) {
-    groq += `{...@->{${projection}}}`;
+    groq.push(`{...@->{${projection}}}`);
   }
 
   // Wrap in a conditional reference expansion.
   else if ("string" === typeof expandReference) {
-    groq += `{_type == "${expandReference}" => @->{${projection}},_type != "${expandReference}" => @{${projection}}}`;
+    groq.push(
+      `{_type == "${expandReference}" => @->{${projection}},_type != "${expandReference}" => @{${projection}}}`,
+    );
   }
 
   // Append the unwrapped projection.
   else {
-    groq += `{${projection}}`;
+    groq.push(`{${projection}}`);
   }
 
   // Extract an array of schemas from the conditions.
   const schemas = Object.values(conditions);
 
   // Create union schema.
-  const schema = Type.Union(schemas, { groq }) as TConditionalUnion<T>;
+  const schema = Type.Union(schemas, {
+    groq: groq.join(""),
+  }) as TConditionalUnion<T>;
 
   // Attach additional attributes.
   schema.groqType = "conditionalUnion";

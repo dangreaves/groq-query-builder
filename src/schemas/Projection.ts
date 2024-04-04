@@ -35,16 +35,16 @@ export function Projection<T extends TProperties = TProperties>(
 ): TProjection<T> {
   const { slice, filter, expandReference } = options ?? {};
 
-  let groq = "";
+  const groq: string[] = [];
 
   // Append filter if provided.
   if (filter) {
-    groq += `[${filter}]`;
+    groq.push(`[${filter}]`);
   }
 
   // Append slice if provided, or default 0 if filter provided.
   if (filter || "undefined" !== typeof slice) {
-    groq += `[${slice ?? 0}]`;
+    groq.push(`[${slice ?? 0}]`);
   }
 
   // Calculate array of properties and join them into a projection.
@@ -67,21 +67,25 @@ export function Projection<T extends TProperties = TProperties>(
 
   // Wrap in a reference expansion.
   if (true === expandReference) {
-    groq += `{...@->{${projection}}}`;
+    groq.push(`{...@->{${projection}}}`);
   }
 
   // Wrap in a conditional reference expansion.
   else if ("string" === typeof expandReference) {
-    groq += `{_type == "${expandReference}" => @->{${projection}},_type != "${expandReference}" => @{${projection}}}`;
+    groq.push(
+      `{_type == "${expandReference}" => @->{${projection}},_type != "${expandReference}" => @{${projection}}}`,
+    );
   }
 
   // Append the unwrapped projection.
   else {
-    groq += `{${projection}}`;
+    groq.push(`{${projection}}`);
   }
 
   // Create object schema.
-  const schema = Type.Object(properties, { groq }) as TProjection<T>;
+  const schema = Type.Object(properties, {
+    groq: groq.join(""),
+  }) as TProjection<T>;
 
   // Attach additional attributes.
   schema["groqType"] = "projection";
