@@ -12,7 +12,7 @@ describe("filtering", () => {
       }),
     );
 
-    expect(schema.groq).toBe(`[]{_key,...@{_type,name,genre}}`);
+    expect(schema.serialize()).toBe(`[]{_key,...@{_type,name,genre}}`);
   });
 
   test("set filter with empty slice", () => {
@@ -25,7 +25,7 @@ describe("filtering", () => {
       { filter: `genre == "action"` },
     );
 
-    expect(schema.groq).toBe(
+    expect(schema.serialize()).toBe(
       `[genre == "action"]{_key,...@{_type,name,genre}}`,
     );
   });
@@ -39,11 +39,11 @@ describe("filtering", () => {
       }),
     );
 
-    const filteredSchema = S.filterCollection(schema, `genre == "action"`);
+    const filteredSchema = schema.filter(`genre == "action"`);
 
-    expect(schema.groq).toBe(`[]{_key,...@{_type,name,genre}}`);
+    expect(schema.serialize()).toBe(`[]{_key,...@{_type,name,genre}}`);
 
-    expect(filteredSchema.groq).toBe(
+    expect(filteredSchema.serialize()).toBe(
       `[genre == "action"]{_key,...@{_type,name,genre}}`,
     );
   });
@@ -60,7 +60,7 @@ describe("slicing", () => {
       { slice: [0, 3] },
     );
 
-    expect(schema.groq).toBe(`[0...3]{_key,...@{_type,name,genre}}`);
+    expect(schema.serialize()).toBe(`[0...3]{_key,...@{_type,name,genre}}`);
   });
 
   test("set slice with a filter", () => {
@@ -73,7 +73,7 @@ describe("slicing", () => {
       { filter: `genre == "action"`, slice: [0, 3] },
     );
 
-    expect(schema.groq).toBe(
+    expect(schema.serialize()).toBe(
       `[genre == "action"][0...3]{_key,...@{_type,name,genre}}`,
     );
   });
@@ -87,10 +87,13 @@ describe("slicing", () => {
       }),
     );
 
-    const slicedSchema = S.sliceCollection(schema, [0, 3]);
+    const slicedSchema = schema.slice([0, 3]);
 
-    expect(schema.groq).toBe(`[]{_key,...@{_type,name,genre}}`);
-    expect(slicedSchema.groq).toBe(`[0...3]{_key,...@{_type,name,genre}}`);
+    expect(schema.serialize()).toBe(`[]{_key,...@{_type,name,genre}}`);
+
+    expect(slicedSchema.serialize()).toBe(
+      `[0...3]{_key,...@{_type,name,genre}}`,
+    );
   });
 });
 
@@ -106,6 +109,6 @@ describe("nesting", () => {
       ),
     });
 
-    expect(schema.groq).toBe(`{movies[]{_key,...@{_type,name,genre}}}`);
+    expect(schema.serialize()).toBe(`{movies[]{_key,...@{_type,name,genre}}}`);
   });
 });

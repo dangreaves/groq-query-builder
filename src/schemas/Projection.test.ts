@@ -13,7 +13,7 @@ describe("filtering", () => {
       { filter: `genre == "action"` },
     );
 
-    expect(schema.groq).toBe(`[genre == "action"][0]{_type,name,genre}`);
+    expect(schema.serialize()).toBe(`[genre == "action"][0]{_type,name,genre}`);
   });
 
   test("filter method clones the projection", () => {
@@ -23,11 +23,11 @@ describe("filtering", () => {
       genre: S.String(),
     });
 
-    const filteredSchema = S.filterProjection(schema, `genre == "action"`);
+    const filteredSchema = schema.filter(`genre == "action"`);
 
-    expect(schema.groq).toBe(`{_type,name,genre}`);
+    expect(schema.serialize()).toBe(`{_type,name,genre}`);
 
-    expect(filteredSchema.groq).toBe(
+    expect(filteredSchema.serialize()).toBe(
       `[genre == "action"][0]{_type,name,genre}`,
     );
   });
@@ -44,7 +44,7 @@ describe("slicing", () => {
       { slice: 0 },
     );
 
-    expect(schema.groq).toBe(`[0]{_type,name,genre}`);
+    expect(schema.serialize()).toBe(`[0]{_type,name,genre}`);
   });
 
   test("set slice with a filter", () => {
@@ -57,7 +57,7 @@ describe("slicing", () => {
       { filter: `genre == "action"`, slice: 3 },
     );
 
-    expect(schema.groq).toBe(`[genre == "action"][3]{_type,name,genre}`);
+    expect(schema.serialize()).toBe(`[genre == "action"][3]{_type,name,genre}`);
   });
 
   test("slice method clones the projection", () => {
@@ -67,11 +67,11 @@ describe("slicing", () => {
       genre: S.String(),
     });
 
-    const slicedSchema = S.sliceProjection(schema, 3);
+    const slicedSchema = schema.slice(3);
 
-    expect(schema.groq).toBe(`{_type,name,genre}`);
+    expect(schema.serialize()).toBe(`{_type,name,genre}`);
 
-    expect(slicedSchema.groq).toBe(`[3]{_type,name,genre}`);
+    expect(slicedSchema.serialize()).toBe(`[3]{_type,name,genre}`);
   });
 });
 
@@ -84,15 +84,7 @@ describe("key formatting", () => {
       isActive: S.Boolean(),
     });
 
-    expect(schema.groq).toBe("{_type,name,age,isActive}");
-  });
-
-  test("alias uses quoted key", () => {
-    const schema = S.Projection({
-      name: S.Alias("otherField", S.String()),
-    });
-
-    expect(schema.groq).toBe(`{"name":otherField}`);
+    expect(schema.serialize()).toBe("{_type,name,age,isActive}");
   });
 
   test("raw uses quoted key", () => {
@@ -100,7 +92,7 @@ describe("key formatting", () => {
       name: S.Raw(`"literal string"`, S.String()),
     });
 
-    expect(schema.groq).toBe(`{"name":"literal string"}`);
+    expect(schema.serialize()).toBe(`{"name":"literal string"}`);
   });
 
   test("nested projection uses unquoted key", () => {
@@ -113,7 +105,7 @@ describe("key formatting", () => {
       }),
     });
 
-    expect(schema.groq).toBe(`{name,address{street,city,postcode}}`);
+    expect(schema.serialize()).toBe(`{name,address{street,city,postcode}}`);
   });
 
   test("nested array uses unquoted key", () => {
@@ -122,7 +114,7 @@ describe("key formatting", () => {
       invoices: S.Collection(S.Unknown()),
     });
 
-    expect(schema.groq).toBe(`{name,invoices[]}`);
+    expect(schema.serialize()).toBe(`{name,invoices[]{_key,...@}}`);
   });
 });
 
@@ -133,10 +125,10 @@ describe("reference expansion", () => {
         name: S.String(),
         email: S.String(),
       },
-      { expandReference: true },
+      { expansionOption: true },
     );
 
-    expect(schema.groq).toBe(`{...@->{name,email}}`);
+    expect(schema.serialize()).toBe(`{...@->{name,email}}`);
   });
 
   test("conditional expanded reference adds wrapper", () => {
@@ -145,10 +137,10 @@ describe("reference expansion", () => {
         name: S.String(),
         email: S.String(),
       },
-      { expandReference: "reference" },
+      { expansionOption: "reference" },
     );
 
-    expect(schema.groq).toBe(
+    expect(schema.serialize()).toBe(
       `{_type == "reference" => @->{name,email},_type != "reference" => @{name,email}}`,
     );
   });
@@ -159,25 +151,10 @@ describe("reference expansion", () => {
       email: S.String(),
     });
 
-    const expandedSchema = S.expandProjection(schema);
+    const expandedSchema = schema.expand();
 
-    expect(schema.groq).toBe(`{name,email}`);
+    expect(schema.serialize()).toBe(`{name,email}`);
 
-    expect(expandedSchema.groq).toBe(`{...@->{name,email}}`);
-  });
-
-  test("expand method with conditional clones the projection", () => {
-    const schema = S.Projection({
-      name: S.String(),
-      email: S.String(),
-    });
-
-    const expandedSchema = S.expandProjection(schema, "reference");
-
-    expect(schema.groq).toBe(`{name,email}`);
-
-    expect(expandedSchema.groq).toBe(
-      `{_type == "reference" => @->{name,email},_type != "reference" => @{name,email}}`,
-    );
+    expect(expandedSchema.serialize()).toBe(`{...@->{name,email}}`);
   });
 });

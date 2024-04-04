@@ -14,7 +14,7 @@ test("creates an extended conditional union", () => {
     }),
   ]);
 
-  expect(schema.groq).toBe(
+  expect(schema.serialize()).toBe(
     `{...select(_type == "person" => {_type,name},_type == "company" => {_type,companyName},{"_rawType":_type,"_type":"unknown"})}`,
   );
 });

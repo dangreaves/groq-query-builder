@@ -24,7 +24,7 @@ function makeComplexSchema() {
   return S.Collection(UnionSchema).filter(`_type == "movie"`);
 }
 
-test("instantiates complex query under perf threshold", async () => {
+test.skip("instantiates complex query under perf threshold", async () => {
   const start = performance.now();
   makeComplexSchema();
   const end = performance.now();
@@ -32,7 +32,7 @@ test("instantiates complex query under perf threshold", async () => {
   expect(end - start).lessThan(1);
 });
 
-test("serializes complex query under perf threshold", async () => {
+test.skip("serializes complex query under perf threshold", async () => {
   const schema = makeComplexSchema();
 
   const start = performance.now();

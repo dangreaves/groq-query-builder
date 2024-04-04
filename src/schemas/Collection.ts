@@ -61,7 +61,7 @@ function serialize(this: TCollection) {
    *
    * @see https://www.sanity.io/answers/is-there-a-way-to-get-the-key-in-an-array-p1599730869291100
    */
-  groq.push(`{_key,...@${this.__inner_schema__.serialize?.() ?? "..."}}`);
+  groq.push(`{_key,...@${this.__inner_schema__.serialize?.() ?? ""}}`);
 
   return groq.join("");
 }

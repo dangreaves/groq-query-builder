@@ -9,5 +9,5 @@ test("creates an extended projection", () => {
     email: S.String(),
   });
 
-  expect(schema.groq).toBe(`{_type,name,email}`);
+  expect(schema.serialize()).toBe(`{_type,name,email}`);
 });

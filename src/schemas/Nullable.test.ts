@@ -10,6 +10,6 @@ describe("projection", () => {
       genre: S.Nullable(S.String()),
     });
 
-    expect(schema.groq).toBe(`{_type,name,genre}`);
+    expect(schema.serialize()).toBe(`{_type,name,genre}`);
   });
 });

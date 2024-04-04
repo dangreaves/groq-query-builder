@@ -24,7 +24,7 @@ export function makeSafeSanityFetch(
     const resultSchema = Nullable(schema);
 
     // Serialize the query to a GROQ string.
-    const groq = "*" + resultSchema.groq;
+    const groq = "*" + (resultSchema.serialize?.() ?? "");
 
     // No groq stored on schema.
     if (!groq) {

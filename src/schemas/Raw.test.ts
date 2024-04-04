@@ -4,5 +4,5 @@ import * as S from "./index";
 
 test("outputs raw groq", () => {
   const schema = S.Raw(`"literal string"`, S.String());
-  expect(schema.groq).toBe(`"literal string"`);
+  expect(schema.serialize()).toBe(`"literal string"`);
 });
