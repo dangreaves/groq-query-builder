@@ -1,39 +1,30 @@
-import { Type, TObject, TProperties, TypeGuard } from "@sinclair/typebox";
+import { Type, TObject, TProperties } from "@sinclair/typebox";
+
+import type { TSerializer, TExpansionOption } from "../types";
 
 /**
  * Options available when creating a projection.
  */
-export type TProjectionOptions =
-  | {
-      slice?: number;
-      filter?: string;
-      expandReference?: boolean | string | undefined;
-    }
-  | undefined;
-
-/**
- * Symbols for storing options on schema without conflicting with JSON schema.
- */
-const optionsKey = Symbol("options");
-const originalPropertiesKey = Symbol("originalProperties");
-
-/**
- * Fetch a single object projection.
- */
-export type TProjection<T extends TProperties = TProperties> = TObject<T> & {
-  groqType: "projection";
-  [optionsKey]?: TProjectionOptions;
-  [originalPropertiesKey]: T;
+export type TProjectionOptions = {
+  slice?: number;
+  filter?: string;
+  expansionOption?: TExpansionOption;
 };
 
 /**
  * Fetch a single object projection.
  */
-export function Projection<T extends TProperties = TProperties>(
-  properties: T,
-  options?: TProjectionOptions,
-): TProjection<T> {
-  const { slice, filter, expandReference } = options ?? {};
+export type TProjection<T extends TProperties = TProperties> = TObject<T> & {
+  __options__?: TProjectionOptions;
+  serialize: TSerializer;
+  expand: (this: any, option?: TExpansionOption) => TProjection<T>;
+};
+
+/**
+ * Serialize a projection.
+ */
+function serialize(this: TProjection) {
+  const { slice, filter, expansionOption } = this.__options__ ?? {};
 
   const groq: string[] = [];
 
@@ -48,16 +39,19 @@ export function Projection<T extends TProperties = TProperties>(
   }
 
   // Calculate array of properties and join them into a projection.
-  const projection = Object.entries(properties)
+  const projection = Object.entries(this.properties)
     .map(([key, value]) => {
+      // Serialize GROQ for this property.
+      const innerGroq = value.serialize?.();
+
       // Property has it's own GROQ to project.
-      if (value.groq) {
+      if (innerGroq) {
         // If object projection, use an unquoted key.
-        if (value.groq.startsWith("{") || value.groq.startsWith("["))
-          return `${key}${value.groq}`;
+        if (innerGroq.startsWith("{") || innerGroq.startsWith("["))
+          return `${key}${innerGroq}`;
 
         // If something else, use a quoted key.
-        return `"${key}":${value.groq}`;
+        return `"${key}":${innerGroq}`;
       }
 
       // If no groq, then use a naked key.
@@ -66,14 +60,14 @@ export function Projection<T extends TProperties = TProperties>(
     .join(",");
 
   // Wrap in a reference expansion.
-  if (true === expandReference) {
+  if (true === expansionOption) {
     groq.push(`{...@->{${projection}}}`);
   }
 
   // Wrap in a conditional reference expansion.
-  else if ("string" === typeof expandReference) {
+  else if ("string" === typeof expansionOption) {
     groq.push(
-      `{_type == "${expandReference}" => @->{${projection}},_type != "${expandReference}" => @{${projection}}}`,
+      `{_type == "${expansionOption}" => @->{${projection}},_type != "${expansionOption}" => @{${projection}}}`,
     );
   }
 
@@ -82,61 +76,47 @@ export function Projection<T extends TProperties = TProperties>(
     groq.push(`{${projection}}`);
   }
 
-  // Create object schema.
-  const schema = Type.Object(properties, {
-    groq: groq.join(""),
-  }) as TProjection<T>;
+  return groq.join("");
+}
 
-  // Attach additional attributes.
-  schema["groqType"] = "projection";
-  if (options) schema[optionsKey] = options;
-  schema[originalPropertiesKey] = properties;
+/**
+ * Expand a projection.
+ */
+function expand<T extends TProjection>(
+  this: T,
+  expansionOption?: TExpansionOption,
+): T {
+  const clonedSchema = Object.assign({}, this) as T;
+
+  clonedSchema.__options__ = {
+    ...(clonedSchema.__options__ ?? {}),
+    expansionOption: expansionOption ?? true,
+  };
+
+  clonedSchema.serialize = serialize.bind(clonedSchema);
+
+  clonedSchema.expand = expand.bind(clonedSchema);
+
+  return clonedSchema;
+}
+
+/**
+ * Fetch a single object projection.
+ */
+export function Projection<T extends TProperties = TProperties>(
+  properties: T,
+  options?: TProjectionOptions,
+): TProjection<T> {
+  const schema = Type.Object(properties) as TProjection<T>;
+
+  if (options) {
+    schema.__options__ = options;
+  }
+
+  schema.serialize = serialize.bind(schema);
+
+  // @ts-expect-error
+  schema.expand = expand.bind(schema);
 
   return schema;
-}
-
-/**
- * Return true if the given schema is a projection.
- */
-export function isProjection(value: unknown): value is TProjection {
-  return TypeGuard.IsSchema(value) && "projection" === value.groqType;
-}
-
-/**
- * Expand the given projection.
- */
-export function expandProjection<T extends TProjection>(
-  schema: T,
-  expandReference?: string,
-): T {
-  return Projection(schema[originalPropertiesKey], {
-    ...schema[optionsKey],
-    expandReference: expandReference ?? true,
-  }) as T;
-}
-
-/**
- * Apply a filter to the given projection.
- */
-export function filterProjection<T extends TProjection>(
-  schema: T,
-  filter: string,
-): T {
-  return Projection(schema[originalPropertiesKey], {
-    ...schema[optionsKey],
-    filter,
-  }) as T;
-}
-
-/**
- * Apply a slice to the given projection.
- */
-export function sliceProjection<T extends TProjection>(
-  schema: T,
-  slice: number,
-): T {
-  return Projection(schema[originalPropertiesKey], {
-    ...schema[optionsKey],
-    slice,
-  }) as T;
 }

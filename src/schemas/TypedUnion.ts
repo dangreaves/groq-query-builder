@@ -1,7 +1,6 @@
 import { Type, type TSchema } from "@sinclair/typebox";
 
 import { Raw } from "./Raw";
-import { Alias } from "./Alias";
 import { Projection } from "./Projection";
 
 import {
@@ -16,7 +15,7 @@ import type { TTypedProjection } from "./TypedProjection";
  * Projection for the "default" condition.
  */
 const DefaultProjection = Projection({
-  _rawType: Alias("_type", Type.String()),
+  _rawType: Raw("_type", Type.String()),
   _type: Raw(`"unknown"`, Type.Literal("unknown")),
 });
 
