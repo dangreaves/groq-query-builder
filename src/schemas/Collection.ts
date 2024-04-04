@@ -30,7 +30,7 @@ export type TCollection<T extends TSchema> = T extends TPrimitive
  */
 export function Collection<T extends TSchema = TSchema>(
   schema: T,
-  options: TCollectionOptions,
+  options?: TCollectionOptions,
 ): TCollection<T> {
   const { slice, filter } = options ?? {};
 
