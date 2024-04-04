@@ -9,6 +9,15 @@ declare module "@sinclair/typebox" {
 
 export { String, Number, Literal, Boolean, Unknown } from "@sinclair/typebox";
 
+export type {
+  TSchema,
+  TString,
+  TNumber,
+  TLiteral,
+  TBoolean,
+  TUnknown,
+} from "@sinclair/typebox";
+
 export * from "./Alias";
 export * from "./Collection";
 export * from "./ConditionalUnion";
