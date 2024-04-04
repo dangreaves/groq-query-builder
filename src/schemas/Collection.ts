@@ -34,7 +34,11 @@ export type TCollection<T extends TSchema = TSchema> = TArray<
  * Serialize a collection.
  */
 function serialize(this: TCollection) {
-  const { filter, slice } = this.__options__ ?? {};
+  const { filter: _filter, slice } = this.__options__ ?? {};
+
+  // Trim filter star if provided. This is handled by the client.
+  const filter =
+    _filter && _filter.startsWith("*") ? _filter.substring(1) : _filter;
 
   const groq: string[] = [];
 

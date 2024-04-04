@@ -63,7 +63,7 @@ describe("filtering", () => {
     );
   });
 
-  test("accepts raw filter with a star and keeps the star", () => {
+  test("accepts raw filter with a star and drops the star", () => {
     const schema = S.Collection(
       S.Projection({
         _type: S.Literal("movie"),
@@ -74,7 +74,7 @@ describe("filtering", () => {
     );
 
     expect(schema.serialize()).toBe(
-      `*[_type == "movie" && foo = $bar][0]["content"]{_key,...@{_type,name,genre}}`,
+      `[_type == "movie" && foo = $bar][0]["content"]{_key,...@{_type,name,genre}}`,
     );
   });
 });

@@ -26,7 +26,11 @@ export type TProjection<T extends TProperties = TProperties> = TObject<T> & {
  * Serialize a projection.
  */
 function serialize(this: TProjection) {
-  const { slice, filter, expansionOption } = this.__options__ ?? {};
+  const { slice, filter: _filter, expansionOption } = this.__options__ ?? {};
+
+  // Trim filter star if provided. This is handled by the client.
+  const filter =
+    _filter && _filter.startsWith("*") ? _filter.substring(1) : _filter;
 
   const groq: string[] = [];
 
