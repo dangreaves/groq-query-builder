@@ -47,6 +47,36 @@ describe("filtering", () => {
       `[genre == "action"]{_key,...@{_type,name,genre}}`,
     );
   });
+
+  test("accepts raw filter without wrapping in extra brackets", () => {
+    const schema = S.Collection(
+      S.Projection({
+        _type: S.Literal("movie"),
+        name: S.String(),
+        genre: S.String(),
+      }),
+      { filter: `[_type == "movie" && foo = $bar][0]["content"]` },
+    );
+
+    expect(schema.serialize()).toBe(
+      `[_type == "movie" && foo = $bar][0]["content"]{_key,...@{_type,name,genre}}`,
+    );
+  });
+
+  test("accepts raw filter with a star and keeps the star", () => {
+    const schema = S.Collection(
+      S.Projection({
+        _type: S.Literal("movie"),
+        name: S.String(),
+        genre: S.String(),
+      }),
+      { filter: `*[_type == "movie" && foo = $bar][0]["content"]` },
+    );
+
+    expect(schema.serialize()).toBe(
+      `*[_type == "movie" && foo = $bar][0]["content"]{_key,...@{_type,name,genre}}`,
+    );
+  });
 });
 
 describe("slicing", () => {

@@ -40,7 +40,10 @@ function serialize(this: TCollection) {
 
   // Append filter if provided.
   if (filter) {
-    groq.push(`[${filter}]`);
+    // Allow raw filters which are already bracketed.
+    if (filter.includes("[")) groq.push(filter);
+    // Otherwise, wrap it in brackets.
+    else groq.push(`[${filter}]`);
   }
 
   // Append slice if provided.

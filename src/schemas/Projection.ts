@@ -32,11 +32,21 @@ function serialize(this: TProjection) {
 
   // Append filter if provided.
   if (filter) {
-    groq.push(`[${filter}]`);
+    // Allow raw filters which are already bracketed.
+    if (filter.includes("[")) groq.push(filter);
+    // Otherwise, wrap it in brackets.
+    else groq.push(`[${filter}]`);
   }
 
+  /**
+   * Determine if a slice is already added via the filter.
+   * The filter option supports "raw" filters where you might pass [foo == "bar"][0] which already
+   * has a slice on the end. Therefore, we don't need to slice it further.
+   */
+  const alreadySliced = filter ? /\[\d+\]$/.test(filter) : false;
+
   // Append slice if provided, or default 0 if filter provided.
-  if (filter || "undefined" !== typeof slice) {
+  if (!alreadySliced && (filter || "undefined" !== typeof slice)) {
     groq.push(`[${slice ?? 0}]`);
   }
 
