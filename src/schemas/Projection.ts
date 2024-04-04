@@ -1,4 +1,4 @@
-import { Type, TObject, TProperties } from "@sinclair/typebox";
+import { Type, TObject, TProperties, TypeGuard } from "@sinclair/typebox";
 
 /**
  * Options available when creating a projection.
@@ -21,6 +21,7 @@ const originalPropertiesKey = Symbol("originalProperties");
  * Fetch a single object projection.
  */
 export type TProjection<T extends TProperties = TProperties> = TObject<T> & {
+  groqType: "projection";
   [optionsKey]?: TProjectionOptions;
   [originalPropertiesKey]: T;
 };
@@ -83,10 +84,18 @@ export function Projection<T extends TProperties = TProperties>(
   const schema = Type.Object(properties, { groq }) as TProjection<T>;
 
   // Attach additional attributes.
+  schema["groqType"] = "projection";
   if (options) schema[optionsKey] = options;
   schema[originalPropertiesKey] = properties;
 
   return schema;
+}
+
+/**
+ * Return true if the given schema is a projection.
+ */
+export function isProjection(value: unknown): value is TProjection {
+  return TypeGuard.IsSchema(value) && "projection" === value.groqType;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { Type, TSchema, TUnion } from "@sinclair/typebox";
+import { Type, TSchema, TUnion, TypeGuard } from "@sinclair/typebox";
 
 /**
  * Options available when creating a conditional union.
@@ -27,6 +27,7 @@ type SchemaArrayFromConditions<T extends Record<string, TSchema>> =
 export type TConditionalUnion<
   T extends Record<string, TSchema> = Record<string, TSchema>,
 > = TUnion<SchemaArrayFromConditions<T>> & {
+  groqType: "conditionalUnion";
   [optionsKey]?: TConditionalUnionOptions;
   [originalConditionsKey]: T;
 };
@@ -79,10 +80,18 @@ export function ConditionalUnion<
   const schema = Type.Union(schemas, { groq }) as TConditionalUnion<T>;
 
   // Attach additional attributes.
+  schema.groqType = "conditionalUnion";
   if (options) schema[optionsKey] = options;
   schema[originalConditionsKey] = conditions;
 
   return schema;
+}
+
+/**
+ * Return true if the given schema is a conditional union.
+ */
+export function isConditionalUnion(value: unknown): value is TConditionalUnion {
+  return TypeGuard.IsSchema(value) && "conditionalUnion" === value.groqType;
 }
 
 /**
