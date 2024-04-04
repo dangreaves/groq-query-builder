@@ -153,4 +153,25 @@ describe("serialization", () => {
     const schema = S.Collection(S.String());
     expect(schema.serialize()).toBe(`[]`);
   });
+
+  test("collection of typed union serializes correctly", () => {
+    const UnionSchema = S.TypedUnion([
+      S.TypedProjection({
+        _type: S.Literal("movie"),
+        name: S.String(),
+        genre: S.String(),
+      }),
+      S.TypedProjection({
+        _type: S.Literal("producer"),
+        firstName: S.String(),
+        lastName: S.String(),
+      }),
+    ]);
+
+    const schema = S.Collection(UnionSchema);
+
+    expect(schema.serialize()).toBe(
+      `[]{_key,...@{...select(_type == "movie" => {_type,name,genre},_type == "producer" => {_type,firstName,lastName},{"_rawType":_type,"_type":"unknown"})}}`,
+    );
+  });
 });

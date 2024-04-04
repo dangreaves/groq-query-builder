@@ -1,6 +1,7 @@
 import {
   Type,
   TArray,
+  TUnion,
   TSchema,
   TObject,
   TString,
@@ -20,8 +21,11 @@ export type TCollectionOptions = { filter?: string; slice?: [number, number] };
 /**
  * Fetch an array of items with optional filter and slicing.
  */
+// @ts-ignore Type instantiation is excessively deep and possibly infinite
 export type TCollection<T extends TSchema = TSchema> = TArray<
-  T extends TObject ? TIntersect<[T, TObject<{ _key: TNullable<TString> }>]> : T
+  T extends TObject | TUnion
+    ? TIntersect<[T, TObject<{ _key: TNullable<TString> }>]>
+    : T
 > & {
   __options__?: TCollectionOptions;
   __inner_schema__: T;
@@ -61,7 +65,7 @@ function serialize(this: TCollection) {
   }
 
   /**
-   * Prepend projection with outer key attribute if array contains object.
+   * Prepend projection with outer key attribute if this is an object like schema.
    *
    * This spread syntax means we never have to change this formatting based on what is inside
    * the child projection. The _key will always be on the "outside", regardless of if the
@@ -69,8 +73,14 @@ function serialize(this: TCollection) {
    *
    * @see https://www.sanity.io/answers/is-there-a-way-to-get-the-key-in-an-array-p1599730869291100
    */
-  if (TypeGuard.IsObject(this.__inner_schema__)) {
-    groq.push(`{_key,...@${this.__inner_schema__.serialize?.() ?? ""}}`);
+  const innerGroq = this.__inner_schema__.serialize?.();
+  if (innerGroq) {
+    if (
+      TypeGuard.IsObject(this.__inner_schema__) ||
+      TypeGuard.IsUnion(this.__inner_schema__)
+    ) {
+      groq.push(`{_key,...@${innerGroq}}`);
+    } else groq.push(innerGroq);
   }
 
   return groq.join("");
