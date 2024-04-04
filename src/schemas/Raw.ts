@@ -1,5 +1,4 @@
 import { TSchema } from "@sinclair/typebox";
-import { Clone } from "@sinclair/typebox/value";
 
 import type { TSerializer } from "../types";
 
@@ -14,7 +13,7 @@ export type TRaw<T extends TSchema = TSchema> = T & {
  * Output raw GROQ.
  */
 export function Raw<T extends TSchema = TSchema>(groq: string, schema: T) {
-  const clonedSchema = Clone(schema) as TRaw<T>;
+  const clonedSchema = Object.assign({} as TRaw<T>, schema);
 
   clonedSchema.serialize = () => groq;
 
