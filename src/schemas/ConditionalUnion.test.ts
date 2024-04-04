@@ -94,7 +94,7 @@ describe("reference expansion", () => {
       }),
     });
 
-    const expandedSchema = schema.expand();
+    const expandedSchema = S.expandConditionalUnion(schema);
 
     expect(schema.groq).toBe(
       `{...select(_type == "person" => {_type,name},_type == "company" => {_type,companyName})}`,
@@ -117,7 +117,7 @@ describe("reference expansion", () => {
       }),
     });
 
-    const expandedSchema = schema.expand("reference");
+    const expandedSchema = S.expandConditionalUnion(schema, "reference");
 
     expect(schema.groq).toBe(
       `{...select(_type == "person" => {_type,name},_type == "company" => {_type,companyName})}`,

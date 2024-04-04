@@ -12,18 +12,17 @@ export type TProjectionOptions =
   | undefined;
 
 /**
- * Symbol for storing options on schema without conflicting with JSON schema.
+ * Symbols for storing options on schema without conflicting with JSON schema.
  */
 const optionsKey = Symbol("options");
+const originalPropertiesKey = Symbol("originalProperties");
 
 /**
  * Fetch a single object projection.
  */
 export type TProjection<T extends TProperties = TProperties> = TObject<T> & {
   [optionsKey]?: TProjectionOptions;
-  expand: (expandReference?: string) => TProjection<T>;
-  filter: (filter: string) => TProjection<T>;
-  slice: (slice: number) => TProjection<T>;
+  [originalPropertiesKey]: T;
 };
 
 /**
@@ -82,37 +81,49 @@ export function Projection<T extends TProperties = TProperties>(
 
   // Create object schema.
   const schema = Type.Object(properties, { groq }) as TProjection<T>;
+
+  // Attach additional attributes.
   if (options) schema[optionsKey] = options;
-
-  /**
-   * Create a copy of this schema with expansion enabled.
-   */
-  schema.expand = (expandReference?: string) => {
-    return Projection(properties, {
-      ...options,
-      expandReference: expandReference ?? true,
-    });
-  };
-
-  /**
-   * Create a copy of this schema with a filter.
-   */
-  schema.filter = (filter) => {
-    return Projection(properties, {
-      ...options,
-      filter,
-    });
-  };
-
-  /**
-   * Create a copy of this schema with a slice.
-   */
-  schema.slice = (slice) => {
-    return Projection(properties, {
-      ...options,
-      slice,
-    });
-  };
+  schema[originalPropertiesKey] = properties;
 
   return schema;
+}
+
+/**
+ * Expand the given projection.
+ */
+export function expandProjection<T extends TProjection>(
+  schema: T,
+  expandReference?: string,
+): T {
+  return Projection(schema[originalPropertiesKey], {
+    ...schema[optionsKey],
+    expandReference: expandReference ?? true,
+  }) as T;
+}
+
+/**
+ * Apply a filter to the given projection.
+ */
+export function filterProjection<T extends TProjection>(
+  schema: T,
+  filter: string,
+): T {
+  return Projection(schema[originalPropertiesKey], {
+    ...schema[optionsKey],
+    filter,
+  }) as T;
+}
+
+/**
+ * Apply a slice to the given projection.
+ */
+export function sliceProjection<T extends TProjection>(
+  schema: T,
+  slice: number,
+): T {
+  return Projection(schema[originalPropertiesKey], {
+    ...schema[optionsKey],
+    slice,
+  }) as T;
 }

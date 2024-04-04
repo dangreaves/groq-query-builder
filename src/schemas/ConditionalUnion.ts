@@ -10,9 +10,10 @@ export type TConditionalUnionOptions =
   | undefined;
 
 /**
- * Symbol for storing options on schema without conflicting with JSON schema.
+ * Symbols for storing options on schema without conflicting with JSON schema.
  */
 const optionsKey = Symbol("options");
+const originalConditionsKey = Symbol("originalConditions");
 
 /**
  * Given a string keyed record of conditions extract array of schemas.
@@ -27,7 +28,7 @@ export type TConditionalUnion<
   T extends Record<string, TSchema> = Record<string, TSchema>,
 > = TUnion<SchemaArrayFromConditions<T>> & {
   [optionsKey]?: TConditionalUnionOptions;
-  expand: (expandReference?: string) => TConditionalUnion<T>;
+  [originalConditionsKey]: T;
 };
 
 /**
@@ -76,17 +77,23 @@ export function ConditionalUnion<
 
   // Create union schema.
   const schema = Type.Union(schemas, { groq }) as TConditionalUnion<T>;
-  if (options) schema[optionsKey] = options;
 
-  /**
-   * Create a copy of this schema with expansion enabled.
-   */
-  schema.expand = (expandReference?: string) => {
-    return ConditionalUnion(conditions, {
-      ...options,
-      expandReference: expandReference ?? true,
-    });
-  };
+  // Attach additional attributes.
+  if (options) schema[optionsKey] = options;
+  schema[originalConditionsKey] = conditions;
 
   return schema;
+}
+
+/**
+ * Expand the given conditional union.
+ */
+export function expandConditionalUnion<T extends TConditionalUnion>(
+  schema: T,
+  expandReference?: string,
+): T {
+  return ConditionalUnion(schema[originalConditionsKey], {
+    ...schema[optionsKey],
+    expandReference: expandReference ?? true,
+  }) as T;
 }

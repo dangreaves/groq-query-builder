@@ -22,14 +22,14 @@ export type TCollectionOptions =
  * Symbols for storing options on schema without conflicting with JSON schema.
  */
 const optionsKey = Symbol("options");
-const originalInnerSchema = Symbol("originalInnerSchema");
+const originalInnerSchemaKey = Symbol("originalInnerSchema");
 
 /**
  * Additional attributes added to array schema.
  */
 type AdditionalSchemaAttributes = {
   [optionsKey]?: TCollectionOptions;
-  [originalInnerSchema]: TSchema;
+  [originalInnerSchemaKey]: TSchema;
 };
 
 /**
@@ -93,7 +93,7 @@ export function Collection<T extends TSchema = TSchema>(
 
   // Attach additional attributes.
   outerSchema[optionsKey] = options;
-  outerSchema[originalInnerSchema] = schema;
+  outerSchema[originalInnerSchemaKey] = schema;
 
   return outerSchema;
 }
@@ -105,7 +105,7 @@ export function filterCollection<T extends TCollection>(
   schema: T,
   filter: string,
 ): T {
-  return Collection(schema[originalInnerSchema], {
+  return Collection(schema[originalInnerSchemaKey], {
     ...schema[optionsKey],
     filter,
   }) as T;
@@ -118,7 +118,7 @@ export function sliceCollection<T extends TCollection>(
   schema: T,
   slice: [number, number],
 ): T {
-  return Collection(schema[originalInnerSchema], {
+  return Collection(schema[originalInnerSchemaKey], {
     ...schema[optionsKey],
     slice,
   }) as T;

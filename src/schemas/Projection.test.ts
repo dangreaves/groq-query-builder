@@ -23,7 +23,7 @@ describe("filtering", () => {
       genre: S.String(),
     });
 
-    const filteredSchema = schema.filter(`genre == "action"`);
+    const filteredSchema = S.filterProjection(schema, `genre == "action"`);
 
     expect(schema.groq).toBe(`{_type,name,genre}`);
 
@@ -67,7 +67,7 @@ describe("slicing", () => {
       genre: S.String(),
     });
 
-    const slicedSchema = schema.slice(3);
+    const slicedSchema = S.sliceProjection(schema, 3);
 
     expect(schema.groq).toBe(`{_type,name,genre}`);
 
@@ -159,7 +159,7 @@ describe("reference expansion", () => {
       email: S.String(),
     });
 
-    const expandedSchema = schema.expand();
+    const expandedSchema = S.expandProjection(schema);
 
     expect(schema.groq).toBe(`{name,email}`);
 
@@ -172,7 +172,7 @@ describe("reference expansion", () => {
       email: S.String(),
     });
 
-    const expandedSchema = schema.expand("reference");
+    const expandedSchema = S.expandProjection(schema, "reference");
 
     expect(schema.groq).toBe(`{name,email}`);
 
