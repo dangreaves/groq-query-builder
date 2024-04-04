@@ -17,6 +17,8 @@ export type TProjectionOptions = {
 export type TProjection<T extends TProperties = TProperties> = TObject<T> & {
   __options__?: TProjectionOptions;
   serialize: TSerializer;
+  slice: (slice: number) => TProjection<T>;
+  filter: (filter: string) => TProjection<T>;
   expand: (this: any, option?: TExpansionOption) => TProjection<T>;
 };
 
@@ -80,6 +82,44 @@ function serialize(this: TProjection) {
 }
 
 /**
+ * Filter a projection.
+ */
+function filter<T extends TProjection>(this: T, _filter: string): T {
+  const clonedSchema = Object.assign({}, this) as T;
+
+  clonedSchema.__options__ = {
+    ...(clonedSchema.__options__ ?? {}),
+    filter: _filter,
+  };
+
+  clonedSchema.slice = slice.bind(clonedSchema);
+  clonedSchema.filter = filter.bind(clonedSchema);
+  clonedSchema.expand = expand.bind(clonedSchema);
+  clonedSchema.serialize = serialize.bind(clonedSchema);
+
+  return clonedSchema;
+}
+
+/**
+ * Slice a projection.
+ */
+function slice<T extends TProjection>(this: T, _slice: number): T {
+  const clonedSchema = Object.assign({}, this) as T;
+
+  clonedSchema.__options__ = {
+    ...(clonedSchema.__options__ ?? {}),
+    slice: _slice,
+  };
+
+  clonedSchema.slice = slice.bind(clonedSchema);
+  clonedSchema.filter = filter.bind(clonedSchema);
+  clonedSchema.expand = expand.bind(clonedSchema);
+  clonedSchema.serialize = serialize.bind(clonedSchema);
+
+  return clonedSchema;
+}
+
+/**
  * Expand a projection.
  */
 function expand<T extends TProjection>(
@@ -93,9 +133,10 @@ function expand<T extends TProjection>(
     expansionOption: expansionOption ?? true,
   };
 
-  clonedSchema.serialize = serialize.bind(clonedSchema);
-
+  clonedSchema.slice = slice.bind(clonedSchema);
+  clonedSchema.filter = filter.bind(clonedSchema);
   clonedSchema.expand = expand.bind(clonedSchema);
+  clonedSchema.serialize = serialize.bind(clonedSchema);
 
   return clonedSchema;
 }
@@ -113,10 +154,13 @@ export function Projection<T extends TProperties = TProperties>(
     schema.__options__ = options;
   }
 
-  schema.serialize = serialize.bind(schema);
-
+  // @ts-expect-error
+  schema.slice = slice.bind(schema);
+  // @ts-expect-error
+  schema.filter = filter.bind(schema);
   // @ts-expect-error
   schema.expand = expand.bind(schema);
+  schema.serialize = serialize.bind(schema);
 
   return schema;
 }
