@@ -15,6 +15,22 @@ describe("filtering", () => {
 
     expect(schema.groq).toBe(`[genre == "action"][0]{_type,name,genre}`);
   });
+
+  test("filter method clones the projection", () => {
+    const schema = S.Projection({
+      _type: S.Literal("movie"),
+      name: S.String(),
+      genre: S.String(),
+    });
+
+    const filteredSchema = schema.filter(`genre == "action"`);
+
+    expect(schema.groq).toBe(`{_type,name,genre}`);
+
+    expect(filteredSchema.groq).toBe(
+      `[genre == "action"][0]{_type,name,genre}`,
+    );
+  });
 });
 
 describe("slicing", () => {
@@ -42,6 +58,20 @@ describe("slicing", () => {
     );
 
     expect(schema.groq).toBe(`[genre == "action"][3]{_type,name,genre}`);
+  });
+
+  test("slice method clones the projection", () => {
+    const schema = S.Projection({
+      _type: S.Literal("movie"),
+      name: S.String(),
+      genre: S.String(),
+    });
+
+    const slicedSchema = schema.slice(3);
+
+    expect(schema.groq).toBe(`{_type,name,genre}`);
+
+    expect(slicedSchema.groq).toBe(`[3]{_type,name,genre}`);
   });
 });
 

@@ -22,6 +22,8 @@ const optionsKey = Symbol("options");
 export type TProjection<T extends TProperties = TProperties> = TObject<T> & {
   [optionsKey]?: TProjectionOptions;
   expand: (expandReference?: string) => TProjection<T>;
+  filter: (filter: string) => TProjection<T>;
+  slice: (slice: number) => TProjection<T>;
 };
 
 /**
@@ -89,6 +91,26 @@ export function Projection<T extends TProperties = TProperties>(
     return Projection(properties, {
       ...options,
       expandReference: expandReference ?? true,
+    });
+  };
+
+  /**
+   * Create a copy of this schema with a filter.
+   */
+  schema.filter = (filter) => {
+    return Projection(properties, {
+      ...options,
+      filter,
+    });
+  };
+
+  /**
+   * Create a copy of this schema with a slice.
+   */
+  schema.slice = (slice) => {
+    return Projection(properties, {
+      ...options,
+      slice,
     });
   };
 
