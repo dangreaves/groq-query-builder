@@ -12,8 +12,8 @@ type SanityParams = Record<string, string | number | null> | undefined;
 export function makeSafeSanityFetch(
   fn: (query: string, params?: SanityParams) => Promise<any>,
   {
-    logger = pino(),
     validationMode = "ERROR",
+    logger = pino({ level: "info" }),
   }: { logger?: Logger; validationMode?: "ERROR" | "WARN" } = {},
 ) {
   return async function fetchSanity<T extends TSchema>(
