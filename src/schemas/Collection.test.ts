@@ -39,7 +39,7 @@ describe("filtering", () => {
       }),
     );
 
-    const filteredSchema = schema.filter(`genre == "action"`);
+    const filteredSchema = S.filterCollection(schema, `genre == "action"`);
 
     expect(schema.groq).toBe(`[]{_key,...@{_type,name,genre}}`);
 
@@ -87,7 +87,7 @@ describe("slicing", () => {
       }),
     );
 
-    const slicedSchema = schema.slice([0, 3]);
+    const slicedSchema = S.sliceCollection(schema, [0, 3]);
 
     expect(schema.groq).toBe(`[]{_key,...@{_type,name,genre}}`);
     expect(slicedSchema.groq).toBe(`[0...3]{_key,...@{_type,name,genre}}`);

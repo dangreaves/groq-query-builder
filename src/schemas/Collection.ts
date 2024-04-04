@@ -19,26 +19,26 @@ export type TCollectionOptions =
   | undefined;
 
 /**
- * Symbol for storing options on schema without conflicting with JSON schema.
+ * Symbols for storing options on schema without conflicting with JSON schema.
  */
 const optionsKey = Symbol("options");
+const originalInnerSchema = Symbol("originalInnerSchema");
 
 /**
  * Additional attributes added to array schema.
  */
-type AdditionalSchemaAttributes<T extends TSchema> = {
+type AdditionalSchemaAttributes = {
   [optionsKey]?: TCollectionOptions;
-  filter: (filter: string) => TCollection<T>;
-  slice: (slice: [number, number]) => TCollection<T>;
+  [originalInnerSchema]: TSchema;
 };
 
 /**
  * Fetch an array of items with optional filter and slicing.
  */
-export type TCollection<T extends TSchema> = T extends TPrimitive
-  ? TArray<T> & AdditionalSchemaAttributes<T>
+export type TCollection<T extends TSchema = TSchema> = T extends TPrimitive
+  ? TArray<T> & AdditionalSchemaAttributes
   : TArray<TIntersect<[T, TObject<{ _key: TNullable<TString> }>]>> &
-      AdditionalSchemaAttributes<T>;
+      AdditionalSchemaAttributes;
 
 /**
  * Fetch an array of items with optional filter and slicing.
@@ -91,25 +91,35 @@ export function Collection<T extends TSchema = TSchema>(
     ) as TCollection<T>;
   })();
 
-  /**
-   * Create a copy of this schema with a filter.
-   */
-  outerSchema.filter = (filter) => {
-    return Collection(schema, {
-      ...options,
-      filter,
-    });
-  };
-
-  /**
-   * Create a copy of this schema with a slice.
-   */
-  outerSchema.slice = (slice) => {
-    return Collection(schema, {
-      ...options,
-      slice,
-    });
-  };
+  // Attach additional attributes.
+  outerSchema[optionsKey] = options;
+  outerSchema[originalInnerSchema] = schema;
 
   return outerSchema;
+}
+
+/**
+ * Apply a filter to the given collection.
+ */
+export function filterCollection<T extends TCollection>(
+  schema: T,
+  filter: string,
+): T {
+  return Collection(schema[originalInnerSchema], {
+    ...schema[optionsKey],
+    filter,
+  }) as T;
+}
+
+/**
+ * Apply a slice to the given collection.
+ */
+export function sliceCollection<T extends TCollection>(
+  schema: T,
+  slice: [number, number],
+): T {
+  return Collection(schema[originalInnerSchema], {
+    ...schema[optionsKey],
+    slice,
+  }) as T;
 }
