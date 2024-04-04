@@ -25,6 +25,8 @@ export type TCollection<T extends TSchema = TSchema> = TArray<
   __options__?: TCollectionOptions;
   __inner_schema__: T;
   serialize: TSerializer;
+  filter: (filter: string) => TCollection<T>;
+  slice: (slice: [number, number]) => TCollection<T>;
 };
 
 /**
@@ -65,6 +67,42 @@ function serialize(this: TCollection) {
 }
 
 /**
+ * Filter a collection.
+ */
+function filter<T extends TCollection>(this: T, _filter: string): T {
+  const clonedSchema = Object.assign({}, this) as T;
+
+  clonedSchema.__options__ = {
+    ...(clonedSchema.__options__ ?? {}),
+    filter: _filter,
+  };
+
+  clonedSchema.slice = slice.bind(clonedSchema);
+  clonedSchema.filter = filter.bind(clonedSchema);
+  clonedSchema.serialize = serialize.bind(clonedSchema);
+
+  return clonedSchema;
+}
+
+/**
+ * Slice a collection.
+ */
+function slice<T extends TCollection>(this: T, _slice: [number, number]): T {
+  const clonedSchema = Object.assign({}, this) as T;
+
+  clonedSchema.__options__ = {
+    ...(clonedSchema.__options__ ?? {}),
+    slice: _slice,
+  };
+
+  clonedSchema.slice = slice.bind(clonedSchema);
+  clonedSchema.filter = filter.bind(clonedSchema);
+  clonedSchema.serialize = serialize.bind(clonedSchema);
+
+  return clonedSchema;
+}
+
+/**
  * Fetch an array of items with optional filter and slicing.
  */
 export function Collection<T extends TSchema = TSchema>(
@@ -82,6 +120,12 @@ export function Collection<T extends TSchema = TSchema>(
   }
 
   arraySchema.serialize = serialize.bind(arraySchema);
+
+  // @ts-expect-error
+  arraySchema.filter = filter.bind(arraySchema);
+
+  // @ts-expect-error
+  arraySchema.slice = slice.bind(arraySchema);
 
   return arraySchema;
 }
