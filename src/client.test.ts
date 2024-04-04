@@ -1,27 +1,27 @@
 import type { Logger } from "pino";
 import { vi, expect, test, describe, beforeEach, Mocked } from "vitest";
 
-import { filterByType } from "./query";
-import type { InferFromQuery } from "./types";
+import type { InferFromSchema } from "./types";
 
 import { makeSafeSanityFetch } from "./client";
 
-import * as Schemas from "./schemas";
+import * as S from "./schemas";
 
-const query = filterByType("movie").grab(
-  Schemas.Object({
-    title: Schemas.String(),
-    director: Schemas.Object({
-      name: Schemas.String(),
+const schema = S.Collection(
+  S.Projection({
+    title: S.String(),
+    director: S.Projection({
+      name: S.String(),
     }),
   }),
+  { filter: `_type == "movie"` },
 );
 
 const mockFn = vi.fn(() =>
   Promise.resolve([
-    { title: "Snatch", director: { name: "Guy Ritchie" } },
-    { title: "Terminator", director: { name: "James Cameron" } },
-  ] satisfies InferFromQuery<typeof query>),
+    { _key: null, title: "Snatch", director: { name: "Guy Ritchie" } },
+    { _key: null, title: "Terminator", director: { name: "James Cameron" } },
+  ] satisfies InferFromSchema<typeof schema>),
 );
 
 const logger = {
@@ -41,23 +41,23 @@ beforeEach(() => {
 
 describe("makeSafeSanityFetch", () => {
   test("sends serialized query to fetch function", async () => {
-    await makeSafeSanityFetch(mockFn, { logger })(query);
+    await makeSafeSanityFetch(mockFn, { logger })(schema);
 
     expect(mockFn).toHaveBeenCalledTimes(1);
 
     expect(mockFn).toHaveBeenCalledWith(
-      `*[_type == "movie"][]{title,director{name}}`,
+      `*[_type == "movie"]{_key,...@{title,director{name}}}`,
       undefined,
     );
   });
 
   test("sends params to fetch function", async () => {
-    await makeSafeSanityFetch(mockFn, { logger })(query, { foo: "bar" });
+    await makeSafeSanityFetch(mockFn, { logger })(schema, { foo: "bar" });
 
     expect(mockFn).toHaveBeenCalledTimes(1);
 
     expect(mockFn).toHaveBeenCalledWith(
-      `*[_type == "movie"][]{title,director{name}}`,
+      `*[_type == "movie"]{_key,...@{title,director{name}}}`,
       { foo: "bar" },
     );
   });
@@ -67,7 +67,7 @@ describe("makeSafeSanityFetch", () => {
     mockFn.mockResolvedValueOnce([{ _type: "none" }]);
 
     await expect(() =>
-      makeSafeSanityFetch(mockFn, { logger })(query),
+      makeSafeSanityFetch(mockFn, { logger })(schema),
     ).rejects.toThrow("GROQ response did not match expected schema.");
   });
 
@@ -76,7 +76,7 @@ describe("makeSafeSanityFetch", () => {
     mockFn.mockResolvedValueOnce([{ _type: "none" }]);
 
     await makeSafeSanityFetch(mockFn, { logger, validationMode: "WARN" })(
-      query,
+      schema,
     );
 
     expect(logger.warn).toHaveBeenCalledWith(

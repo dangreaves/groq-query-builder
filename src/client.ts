@@ -1,10 +1,11 @@
 import { pino, type Logger } from "pino";
 
-import { Type } from "@sinclair/typebox";
+import type { TSchema } from "@sinclair/typebox";
 import { Value, type ValueError } from "@sinclair/typebox/value";
 
-import type { BaseQuery } from "./query";
-import type { InferFromQuery } from "./types";
+import type { InferFromSchema } from "./types";
+
+import { Nullable, TNullable } from "./schemas/Nullable";
 
 type SanityParams = Record<string, string | number | null> | undefined;
 
@@ -15,18 +16,25 @@ export function makeSafeSanityFetch(
     validationMode = "ERROR",
   }: { logger?: Logger; validationMode?: "ERROR" | "WARN" } = {},
 ) {
-  return async function fetchSanity<T extends BaseQuery<any>>(
-    query: T,
+  return async function fetchSanity<T extends TSchema>(
+    schema: T,
     params?: SanityParams,
-  ): Promise<InferFromQuery<T>> {
+  ): Promise<InferFromSchema<TNullable<T>>> {
+    // Sanity may return null, wrap the query schema in a union.
+    const resultSchema = Nullable(schema);
+
     // Serialize the query to a GROQ string.
-    const groq = query.serialize();
+    const groq = "*" + resultSchema.groq;
+
+    // No groq stored on schema.
+    if (!groq) {
+      throw new Error(
+        "The provided schema does not have a GROQ string. Check that you have used an appropriate schema.",
+      );
+    }
 
     // Log the GROQ query.
     logger.info({ query: groq }, "Sending GROQ query.");
-
-    // Sanity may return null, wrap the query schema in a union.
-    const resultSchema = Type.Union([query.resolveSchema(), Type.Null()]);
 
     // Fetch result from Sanity.
     const res = await fn(groq, params);
@@ -71,7 +79,7 @@ export function makeSafeSanityFetch(
     }
 
     // Return result.
-    return result as InferFromQuery<T>;
+    return result as InferFromSchema<TNullable<T>>;
   };
 }
 

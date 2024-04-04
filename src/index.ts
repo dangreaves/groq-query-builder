@@ -1,5 +1,5 @@
 export * from "./client";
-export * from "./query";
 export * from "./types";
 
-export * as Schema from "./schemas";
+export * as S from "./schemas";
+export * as Schemas from "./schemas";
