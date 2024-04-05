@@ -41,28 +41,6 @@ export type TConditionalUnion<
 > = TUnion<SchemaArrayFromConditions<T>> & AdditionalAttributes;
 
 /**
- * Expand a conditional union.
- */
-function expandConditionalUnion<T extends TConditionalUnion>(
-  _schema: T,
-  expansionOption?: TExpansionOption,
-): T {
-  const { __options__, slice, expand, filter, serialize, ...rest } = _schema;
-
-  const schema = rest as T;
-
-  schema.__options__ = {
-    ...__options__,
-    expansionOption: expansionOption ?? true,
-  };
-
-  schema.expand = (...args) => expandConditionalUnion(schema, ...args);
-  schema.serialize = (...args) => serializeConditionalUnion(schema, ...args);
-
-  return schema;
-}
-
-/**
  * Fetch a union of schemas based on conditions.
  */
 export function ConditionalUnion<
@@ -127,4 +105,17 @@ export function serializeConditionalUnion(schema: TConditionalUnion): string {
   }
 
   return groq.join("");
+}
+
+/**
+ * Expand a conditional union.
+ */
+export function expandConditionalUnion<T extends TConditionalUnion>(
+  schema: T,
+  expand?: TExpansionOption,
+): T {
+  return {
+    ...schema,
+    [ExpandAttibute]: expand ?? true,
+  };
 }

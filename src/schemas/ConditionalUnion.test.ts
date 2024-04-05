@@ -3,7 +3,12 @@ import { expect, test, describe } from "vitest";
 import { Type } from "@sinclair/typebox";
 
 import { Projection } from "./Projection";
-import { ConditionalUnion } from "./ConditionalUnion";
+
+import {
+  ConditionalUnion,
+  expandConditionalUnion,
+  serializeConditionalUnion,
+} from "./ConditionalUnion";
 
 describe("condition serialization", () => {
   test("conditions without default serializes correctly", () => {
@@ -18,7 +23,7 @@ describe("condition serialization", () => {
       }),
     });
 
-    expect(schema.serialize()).toBe(
+    expect(serializeConditionalUnion(schema)).toBe(
       `{...select(_type == "person" => {_type,name},_type == "company" => {_type,companyName})}`,
     );
   });
@@ -38,7 +43,7 @@ describe("condition serialization", () => {
       }),
     });
 
-    expect(schema.serialize()).toBe(
+    expect(serializeConditionalUnion(schema)).toBe(
       `{...select(_type == "person" => {_type,name},_type == "company" => {_type,companyName},{_type})}`,
     );
   });
@@ -57,10 +62,10 @@ describe("reference expansion", () => {
           companyName: Type.String(),
         }),
       },
-      { expansionOption: true },
+      { expand: true },
     );
 
-    expect(schema.serialize()).toBe(
+    expect(serializeConditionalUnion(schema)).toBe(
       `{...@->{...select(_type == "person" => {_type,name},_type == "company" => {_type,companyName})}}`,
     );
   });
@@ -77,10 +82,10 @@ describe("reference expansion", () => {
           companyName: Type.String(),
         }),
       },
-      { expansionOption: "reference" },
+      { expand: "reference" },
     );
 
-    expect(schema.serialize()).toBe(
+    expect(serializeConditionalUnion(schema)).toBe(
       `{_type == "reference" => @->{...select(_type == "person" => {_type,name},_type == "company" => {_type,companyName})},_type != "reference" => @{...select(_type == "person" => {_type,name},_type == "company" => {_type,companyName})}}`,
     );
   });
@@ -97,13 +102,13 @@ describe("reference expansion", () => {
       }),
     });
 
-    const expandedSchema = schema.expand();
+    const expandedSchema = expandConditionalUnion(schema);
 
-    expect(schema.serialize()).toBe(
+    expect(serializeConditionalUnion(schema)).toBe(
       `{...select(_type == "person" => {_type,name},_type == "company" => {_type,companyName})}`,
     );
 
-    expect(expandedSchema.serialize()).toBe(
+    expect(serializeConditionalUnion(expandedSchema)).toBe(
       `{...@->{...select(_type == "person" => {_type,name},_type == "company" => {_type,companyName})}}`,
     );
   });

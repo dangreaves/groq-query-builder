@@ -3,8 +3,15 @@ import { expect, test, describe } from "vitest";
 import { Type } from "@sinclair/typebox";
 
 import { Raw } from "./Raw";
-import { Projection } from "./Projection";
 import { Collection } from "./Collection";
+
+import {
+  Projection,
+  sliceProjection,
+  filterProjection,
+  expandProjection,
+  serializeProjection,
+} from "./Projection";
 
 describe("filtering", () => {
   test("set filter with default slice", () => {
@@ -17,7 +24,9 @@ describe("filtering", () => {
       { filter: `genre == "action"` },
     );
 
-    expect(schema.serialize()).toBe(`[genre == "action"][0]{_type,name,genre}`);
+    expect(serializeProjection(schema)).toBe(
+      `[genre == "action"][0]{_type,name,genre}`,
+    );
   });
 
   test("filter method clones the projection", () => {
@@ -27,11 +36,11 @@ describe("filtering", () => {
       genre: Type.String(),
     });
 
-    const filteredSchema = schema.filter(`genre == "action"`);
+    const filteredSchema = filterProjection(schema, `genre == "action"`);
 
-    expect(schema.serialize()).toBe(`{_type,name,genre}`);
+    expect(serializeProjection(schema)).toBe(`{_type,name,genre}`);
 
-    expect(filteredSchema.serialize()).toBe(
+    expect(serializeProjection(filteredSchema)).toBe(
       `[genre == "action"][0]{_type,name,genre}`,
     );
   });
@@ -46,7 +55,7 @@ describe("filtering", () => {
       { filter: `[_type == "movie" && foo = $bar][0]["content"][1]` },
     );
 
-    expect(schema.serialize()).toBe(
+    expect(serializeProjection(schema)).toBe(
       `[_type == "movie" && foo = $bar][0]["content"][1]{_type,name,genre}`,
     );
   });
@@ -61,7 +70,7 @@ describe("filtering", () => {
       { filter: `*[_type == "movie" && foo = $bar][0]["content"][1]` },
     );
 
-    expect(schema.serialize()).toBe(
+    expect(serializeProjection(schema)).toBe(
       `[_type == "movie" && foo = $bar][0]["content"][1]{_type,name,genre}`,
     );
   });
@@ -78,7 +87,7 @@ describe("slicing", () => {
       { slice: 0 },
     );
 
-    expect(schema.serialize()).toBe(`[0]{_type,name,genre}`);
+    expect(serializeProjection(schema)).toBe(`[0]{_type,name,genre}`);
   });
 
   test("set slice with a filter", () => {
@@ -91,7 +100,9 @@ describe("slicing", () => {
       { filter: `genre == "action"`, slice: 3 },
     );
 
-    expect(schema.serialize()).toBe(`[genre == "action"][3]{_type,name,genre}`);
+    expect(serializeProjection(schema)).toBe(
+      `[genre == "action"][3]{_type,name,genre}`,
+    );
   });
 
   test("slice method clones the projection", () => {
@@ -101,11 +112,11 @@ describe("slicing", () => {
       genre: Type.String(),
     });
 
-    const slicedSchema = schema.slice(3);
+    const slicedSchema = sliceProjection(schema, 3);
 
-    expect(schema.serialize()).toBe(`{_type,name,genre}`);
+    expect(serializeProjection(schema)).toBe(`{_type,name,genre}`);
 
-    expect(slicedSchema.serialize()).toBe(`[3]{_type,name,genre}`);
+    expect(serializeProjection(slicedSchema)).toBe(`[3]{_type,name,genre}`);
   });
 });
 
@@ -118,7 +129,7 @@ describe("key formatting", () => {
       isActive: Type.Boolean(),
     });
 
-    expect(schema.serialize()).toBe("{_type,name,age,isActive}");
+    expect(serializeProjection(schema)).toBe("{_type,name,age,isActive}");
   });
 
   test("raw uses quoted key", () => {
@@ -126,7 +137,7 @@ describe("key formatting", () => {
       name: Raw(`"Type.Literal string"`, Type.String()),
     });
 
-    expect(schema.serialize()).toBe(`{"name":"Type.Literal string"}`);
+    expect(serializeProjection(schema)).toBe(`{"name":"Type.Literal string"}`);
   });
 
   test("nested projection uses unquoted key", () => {
@@ -139,7 +150,9 @@ describe("key formatting", () => {
       }),
     });
 
-    expect(schema.serialize()).toBe(`{name,address{street,city,postcode}}`);
+    expect(serializeProjection(schema)).toBe(
+      `{name,address{street,city,postcode}}`,
+    );
   });
 
   test("nested array uses unquoted key", () => {
@@ -148,7 +161,7 @@ describe("key formatting", () => {
       invoices: Collection(Type.Unknown()),
     });
 
-    expect(schema.serialize()).toBe(`{name,invoices[]}`);
+    expect(serializeProjection(schema)).toBe(`{name,invoices[]}`);
   });
 });
 
@@ -159,10 +172,10 @@ describe("reference expansion", () => {
         name: Type.String(),
         email: Type.String(),
       },
-      { expansionOption: true },
+      { expand: true },
     );
 
-    expect(schema.serialize()).toBe(`{...@->{name,email}}`);
+    expect(serializeProjection(schema)).toBe(`{...@->{name,email}}`);
   });
 
   test("conditional expanded reference adds wrapper", () => {
@@ -171,10 +184,10 @@ describe("reference expansion", () => {
         name: Type.String(),
         email: Type.String(),
       },
-      { expansionOption: "reference" },
+      { expand: "reference" },
     );
 
-    expect(schema.serialize()).toBe(
+    expect(serializeProjection(schema)).toBe(
       `{_type == "reference" => @->{name,email},_type != "reference" => @{name,email}}`,
     );
   });
@@ -185,10 +198,10 @@ describe("reference expansion", () => {
       email: Type.String(),
     });
 
-    const expandedSchema = schema.expand();
+    const expandedSchema = expandProjection(schema);
 
-    expect(schema.serialize()).toBe(`{name,email}`);
+    expect(serializeProjection(schema)).toBe(`{name,email}`);
 
-    expect(expandedSchema.serialize()).toBe(`{...@->{name,email}}`);
+    expect(serializeProjection(expandedSchema)).toBe(`{...@->{name,email}}`);
   });
 });

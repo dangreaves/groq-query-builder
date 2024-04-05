@@ -3,6 +3,8 @@ import { pino, type Logger } from "pino";
 import type { TSchema } from "@sinclair/typebox";
 import { Value, type ValueError } from "@sinclair/typebox/value";
 
+import { serialize } from "./serialize";
+
 import type { InferFromSchema } from "./types";
 
 import { Nullable, TNullable } from "./schemas/Nullable";
@@ -24,7 +26,7 @@ export function makeSafeSanityFetch(
     const resultSchema = Nullable(schema);
 
     // Serialize the query to a GROQ string.
-    const groq = "*" + (resultSchema.serialize?.() ?? "");
+    const groq = "*" + serialize(schema);
 
     // No groq stored on schema.
     if (!groq) {

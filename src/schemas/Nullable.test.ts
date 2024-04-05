@@ -3,7 +3,7 @@ import { expect, test, describe } from "vitest";
 import { Type } from "@sinclair/typebox";
 
 import { Nullable } from "./Nullable";
-import { Projection } from "./Projection";
+import { Projection, serializeProjection } from "./Projection";
 
 describe("projection", () => {
   test("projects correctly by returning child groq", () => {
@@ -13,6 +13,6 @@ describe("projection", () => {
       genre: Nullable(Type.String()),
     });
 
-    expect(schema.serialize()).toBe(`{_type,name,genre}`);
+    expect(serializeProjection(schema)).toBe(`{_type,name,genre}`);
   });
 });

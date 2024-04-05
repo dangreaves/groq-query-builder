@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 
 import { Type } from "@sinclair/typebox";
 
+import { serializeProjection } from "./Projection";
 import { TypedProjection } from "./TypedProjection";
 
 test("creates an extended projection", () => {
@@ -11,5 +12,5 @@ test("creates an extended projection", () => {
     email: Type.String(),
   });
 
-  expect(schema.serialize()).toBe(`{_type,name,email}`);
+  expect(serializeProjection(schema)).toBe(`{_type,name,email}`);
 });

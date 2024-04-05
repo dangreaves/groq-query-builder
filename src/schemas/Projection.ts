@@ -38,75 +38,6 @@ export type TProjection<T extends TProperties = TProperties> = TObject<T> &
   AdditionalAttributes;
 
 /**
- * Filter a projection.
- */
-function filterProjection<T extends TProjection>(
-  _schema: T,
-  _filter: string,
-): T {
-  const { __options__, slice, expand, filter, serialize, ...rest } = _schema;
-
-  const schema = rest as T;
-
-  schema.__options__ = {
-    ...__options__,
-    filter: _filter,
-  };
-
-  schema.slice = (...args) => sliceProjection(schema, ...args);
-  schema.expand = (...args) => expandProjection(schema, ...args);
-  schema.filter = (...args) => filterProjection(schema, ...args);
-  schema.serialize = (...args) => serializeProjection(schema, ...args);
-
-  return schema;
-}
-
-/**
- * Slice a projection.
- */
-function sliceProjection<T extends TProjection>(_schema: T, _slice: number): T {
-  const { __options__, slice, expand, filter, serialize, ...rest } = _schema;
-
-  const schema = rest as T;
-
-  schema.__options__ = {
-    ...__options__,
-    slice: _slice,
-  };
-
-  schema.slice = (...args) => sliceProjection(schema, ...args);
-  schema.expand = (...args) => expandProjection(schema, ...args);
-  schema.filter = (...args) => filterProjection(schema, ...args);
-  schema.serialize = (...args) => serializeProjection(schema, ...args);
-
-  return schema;
-}
-
-/**
- * Expand a projection.
- */
-function expandProjection<T extends TProjection>(
-  _schema: T,
-  expansionOption?: TExpansionOption,
-): T {
-  const { __options__, slice, expand, filter, serialize, ...rest } = _schema;
-
-  const schema = rest as T;
-
-  schema.__options__ = {
-    ...__options__,
-    expansionOption: expansionOption ?? true,
-  };
-
-  schema.slice = (...args) => sliceProjection(schema, ...args);
-  schema.expand = (...args) => expandProjection(schema, ...args);
-  schema.filter = (...args) => filterProjection(schema, ...args);
-  schema.serialize = (...args) => serializeProjection(schema, ...args);
-
-  return schema;
-}
-
-/**
  * Fetch a single object projection.
  */
 export function Projection<T extends TProperties = TProperties>(
@@ -204,4 +135,43 @@ export function serializeProjection(schema: TProjection): string {
   }
 
   return groq.join("");
+}
+
+/**
+ * Filter a projection.
+ */
+export function filterProjection<T extends TProjection>(
+  schema: T,
+  filter: string,
+): T {
+  return {
+    ...schema,
+    [FilterAttribute]: filter,
+  };
+}
+
+/**
+ * Slice a projection.
+ */
+export function sliceProjection<T extends TProjection>(
+  schema: T,
+  slice: number,
+): T {
+  return {
+    ...schema,
+    [SliceAttribute]: slice,
+  };
+}
+
+/**
+ * Expand a projection.
+ */
+export function expandProjection<T extends TProjection>(
+  schema: T,
+  expand?: TExpansionOption,
+): T {
+  return {
+    ...schema,
+    [ExpandAttribute]: expand ?? true,
+  };
 }

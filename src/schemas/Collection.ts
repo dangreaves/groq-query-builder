@@ -39,58 +39,13 @@ type AdditionalAttributes = {
 /**
  * Fetch an array of items with optional filter and slicing.
  */
+// @ts-ignore Type instantiation is excessively deep and possibly infinite.
 export type TCollection<T extends TSchema = TSchema> = TArray<
   T extends TObject | TUnion
     ? TIntersect<[T, TObject<{ _key: TNullable<TString> }>]>
     : T
 > &
   AdditionalAttributes;
-
-/**
- * Filter a collection.
- */
-function filterCollection<T extends TCollection>(
-  _schema: T,
-  _filter: string,
-): T {
-  const { __options__, slice, expand, filter, serialize, ...rest } = _schema;
-
-  const schema = rest as T;
-
-  schema.__options__ = {
-    ...__options__,
-    filter: _filter,
-  };
-
-  schema.slice = (...args) => sliceCollection(schema, ...args);
-  schema.filter = (...args) => filterCollection(schema, ...args);
-  schema.serialize = (...args) => serializeCollection(schema, ...args);
-
-  return schema;
-}
-
-/**
- * Slice a collection.
- */
-function sliceCollection<T extends TCollection>(
-  _schema: T,
-  _slice: [number, number],
-): T {
-  const { __options__, slice, expand, filter, serialize, ...rest } = _schema;
-
-  const schema = rest as T;
-
-  schema.__options__ = {
-    ...__options__,
-    slice: _slice,
-  };
-
-  schema.slice = (...args) => sliceCollection(schema, ...args);
-  schema.filter = (...args) => filterCollection(schema, ...args);
-  schema.serialize = (...args) => serializeCollection(schema, ...args);
-
-  return schema;
-}
 
 /**
  * Fetch an array of items with optional filter and slicing.
@@ -103,6 +58,7 @@ export function Collection<T extends TSchema = TSchema>(
     ? Type.Intersect([schema, Type.Object({ _key: Nullable(Type.String()) })])
     : schema;
 
+  // @ts-ignore Type instantiation is excessively deep and possibly infinite.
   return Type.Array(arrayMemberSchema, {
     [TypeAttribute]: "Collection",
     [InnerSchemaAttribute]: schema,
@@ -171,4 +127,30 @@ export function serializeCollection(schema: TCollection): string {
   }
 
   return groq.join("");
+}
+
+/**
+ * Filter a collection.
+ */
+export function filterCollection<T extends TCollection>(
+  schema: T,
+  filter: string,
+): T {
+  return {
+    ...schema,
+    [FilterAttribute]: filter,
+  };
+}
+
+/**
+ * Slice a collection.
+ */
+export function sliceCollection<T extends TCollection>(
+  schema: T,
+  slice: [number, number],
+): T {
+  return {
+    ...schema,
+    [SliceAttribute]: slice,
+  };
 }

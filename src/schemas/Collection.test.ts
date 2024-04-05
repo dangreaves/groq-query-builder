@@ -2,10 +2,17 @@ import { expect, test, describe } from "vitest";
 
 import { Type } from "@sinclair/typebox";
 
-import { Collection } from "./Collection";
-import { Projection } from "./Projection";
 import { TypedUnion } from "./TypedUnion";
 import { TypedProjection } from "./TypedProjection";
+
+import { Projection, serializeProjection } from "./Projection";
+
+import {
+  Collection,
+  sliceCollection,
+  filterCollection,
+  serializeCollection,
+} from "./Collection";
 
 describe("filtering", () => {
   test("empty brackets when no filter or slice", () => {
@@ -17,7 +24,7 @@ describe("filtering", () => {
       }),
     );
 
-    expect(schema.serialize()).toBe(`[]{_key,...@{_type,name,genre}}`);
+    expect(serializeCollection(schema)).toBe(`[]{_key,...@{_type,name,genre}}`);
   });
 
   test("set filter with empty slice", () => {
@@ -30,7 +37,7 @@ describe("filtering", () => {
       { filter: `genre == "action"` },
     );
 
-    expect(schema.serialize()).toBe(
+    expect(serializeCollection(schema)).toBe(
       `[genre == "action"]{_key,...@{_type,name,genre}}`,
     );
   });
@@ -44,11 +51,11 @@ describe("filtering", () => {
       }),
     );
 
-    const filteredSchema = schema.filter(`genre == "action"`);
+    const filteredSchema = filterCollection(schema, `genre == "action"`);
 
-    expect(schema.serialize()).toBe(`[]{_key,...@{_type,name,genre}}`);
+    expect(serializeCollection(schema)).toBe(`[]{_key,...@{_type,name,genre}}`);
 
-    expect(filteredSchema.serialize()).toBe(
+    expect(serializeCollection(filteredSchema)).toBe(
       `[genre == "action"]{_key,...@{_type,name,genre}}`,
     );
   });
@@ -63,7 +70,7 @@ describe("filtering", () => {
       { filter: `[_type == "movie" && foo = $bar][0]["content"]` },
     );
 
-    expect(schema.serialize()).toBe(
+    expect(serializeCollection(schema)).toBe(
       `[_type == "movie" && foo = $bar][0]["content"]{_key,...@{_type,name,genre}}`,
     );
   });
@@ -78,7 +85,7 @@ describe("filtering", () => {
       { filter: `*[_type == "movie" && foo = $bar][0]["content"]` },
     );
 
-    expect(schema.serialize()).toBe(
+    expect(serializeCollection(schema)).toBe(
       `[_type == "movie" && foo = $bar][0]["content"]{_key,...@{_type,name,genre}}`,
     );
   });
@@ -95,7 +102,9 @@ describe("slicing", () => {
       { slice: [0, 3] },
     );
 
-    expect(schema.serialize()).toBe(`[0...3]{_key,...@{_type,name,genre}}`);
+    expect(serializeCollection(schema)).toBe(
+      `[0...3]{_key,...@{_type,name,genre}}`,
+    );
   });
 
   test("set slice with a filter", () => {
@@ -108,7 +117,7 @@ describe("slicing", () => {
       { filter: `genre == "action"`, slice: [0, 3] },
     );
 
-    expect(schema.serialize()).toBe(
+    expect(serializeCollection(schema)).toBe(
       `[genre == "action"][0...3]{_key,...@{_type,name,genre}}`,
     );
   });
@@ -122,11 +131,11 @@ describe("slicing", () => {
       }),
     );
 
-    const slicedSchema = schema.slice([0, 3]);
+    const slicedSchema = sliceCollection(schema, [0, 3]);
 
-    expect(schema.serialize()).toBe(`[]{_key,...@{_type,name,genre}}`);
+    expect(serializeCollection(schema)).toBe(`[]{_key,...@{_type,name,genre}}`);
 
-    expect(slicedSchema.serialize()).toBe(
+    expect(serializeCollection(slicedSchema)).toBe(
       `[0...3]{_key,...@{_type,name,genre}}`,
     );
   });
@@ -144,19 +153,21 @@ describe("nesting", () => {
       ),
     });
 
-    expect(schema.serialize()).toBe(`{movies[]{_key,...@{_type,name,genre}}}`);
+    expect(serializeProjection(schema)).toBe(
+      `{movies[]{_key,...@{_type,name,genre}}}`,
+    );
   });
 });
 
 describe("serialization", () => {
   test("collection of unknown serializes without projection", () => {
     const schema = Collection(Type.Unknown());
-    expect(schema.serialize()).toBe(`[]`);
+    expect(serializeCollection(schema)).toBe(`[]`);
   });
 
   test("collection of string serializes without projection", () => {
     const schema = Collection(Type.String());
-    expect(schema.serialize()).toBe(`[]`);
+    expect(serializeCollection(schema)).toBe(`[]`);
   });
 
   test("collection of typed union serializes correctly", () => {
@@ -175,7 +186,7 @@ describe("serialization", () => {
 
     const schema = Collection(UnionSchema);
 
-    expect(schema.serialize()).toBe(
+    expect(serializeCollection(schema)).toBe(
       `[]{_key,...@{...select(_type == "movie" => {_type,name,genre},_type == "producer" => {_type,firstName,lastName},{"_rawType":_type,"_type":"unknown"})}}`,
     );
   });

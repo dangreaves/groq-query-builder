@@ -4,6 +4,7 @@ import { Type } from "@sinclair/typebox";
 
 import { TypedUnion } from "./TypedUnion";
 import { TypedProjection } from "./TypedProjection";
+import { serializeConditionalUnion } from "./ConditionalUnion";
 
 test("creates an extended conditional union", () => {
   const schema = TypedUnion([
@@ -17,7 +18,7 @@ test("creates an extended conditional union", () => {
     }),
   ]);
 
-  expect(schema.serialize()).toBe(
+  expect(serializeConditionalUnion(schema)).toBe(
     `{...select(_type == "person" => {_type,name},_type == "company" => {_type,companyName},{"_rawType":_type,"_type":"unknown"})}`,
   );
 });

@@ -4,6 +4,8 @@ import { performance } from "node:perf_hooks";
 import { Type } from "@sinclair/typebox";
 import { Projection, TypedProjection, TypedUnion, Collection } from "./schemas";
 
+import { serialize } from "./serialize";
+
 function makeComplexSchema() {
   const CompanySchema = TypedProjection({
     _type: Type.Literal("company"),
@@ -38,7 +40,7 @@ test.skip("serializes complex query under perf threshold", async () => {
   const schema = makeComplexSchema();
 
   const start = performance.now();
-  schema.serialize();
+  serialize(schema);
   const end = performance.now();
 
   const score = end - start;
