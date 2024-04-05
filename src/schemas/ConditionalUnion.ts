@@ -22,8 +22,9 @@ const ConditionsAttribute = Symbol("conditions");
  * Additional attributes added to underlying schema.
  */
 type AdditionalAttributes = {
+  /** Array of conditions in order of the schemas added to the union */
+  [ConditionsAttribute]: string[];
   [TypeAttribute]: "ConditionalUnion";
-  [ConditionsAttribute]: Record<string, TSchema>;
   [ExpandAttibute]: TConditionalUnionOptions["expand"];
 };
 
@@ -47,9 +48,9 @@ export function ConditionalUnion<
   T extends Record<string, TSchema> = Record<string, TSchema>,
 >(conditions: T, options?: TConditionalUnionOptions): TConditionalUnion<T> {
   return Type.Union(Object.values(conditions), {
-    [TypeAttribute]: "ConditionalUnion",
-    [ConditionsAttribute]: conditions,
     [ExpandAttibute]: options?.expand,
+    [TypeAttribute]: "ConditionalUnion",
+    [ConditionsAttribute]: Object.keys(conditions),
   } satisfies AdditionalAttributes) as TConditionalUnion<T>;
 }
 
@@ -70,18 +71,30 @@ export function serializeConditionalUnion(schema: TConditionalUnion): string {
   const groq: string[] = [];
 
   // Calculate a set of conditions for select().
-  const selectConditions = Object.entries(schema[ConditionsAttribute])
-    .filter(([condition]) => "default" !== condition)
-    .map(([condition, innerSchema]) => {
-      const innerGroq = serialize(innerSchema) || "...";
-      return `${condition} => ${innerGroq}`;
-    });
+  const selectConditions = schema[ConditionsAttribute].map((condition, key) => {
+    // Default condition is always added last.
+    if ("default" == condition) return null;
 
-  // Add default condition on the end if provided.
-  if (schema[ConditionsAttribute]["default"]) {
-    const innerGroq =
-      serialize(schema[ConditionsAttribute]["default"]) || "...";
-    selectConditions.push(innerGroq);
+    // Find schema according to key for this condition.
+    const conditionSchema = schema.anyOf[key];
+    if (!conditionSchema) return null;
+
+    // Serialize the condition schema.
+    const conditionGroq = serialize(conditionSchema) || "...";
+
+    // Return it in the right format.
+    return `${condition} => ${conditionGroq}`;
+  }).filter(Boolean) as string[];
+
+  // Find the default condition if provided.
+  const defaultConditionIndex = schema[ConditionsAttribute].indexOf("default");
+  const defaultConditionSchema =
+    0 <= defaultConditionIndex ? schema.anyOf[defaultConditionIndex] : null;
+
+  // Default condition found, serialize and append.
+  if (defaultConditionSchema) {
+    const conditionGroq = serialize(defaultConditionSchema) || "...";
+    selectConditions.push(conditionGroq);
   }
 
   // Wrap conditions in a spread select query.

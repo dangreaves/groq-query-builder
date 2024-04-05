@@ -52,6 +52,6 @@ export function TypedUnion<T extends TTypedProjection[] = TTypedProjection[]>(
     { default: DefaultProjection } as Record<string, TSchema>,
   );
 
-  // @ts-ignore Types are too deep.
+  // @ts-ignore Type instantiation is excessively deep and possibly infinite.
   return ConditionalUnion(conditions, options) as TTypedUnion<T>;
 }
