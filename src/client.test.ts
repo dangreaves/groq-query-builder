@@ -3,7 +3,7 @@ import { vi, expect, test, describe, beforeEach, Mocked } from "vitest";
 
 import type { InferFromSchema } from "./types";
 
-import { makeSafeSanityFetch } from "./client";
+import { makeQueryClient } from "./client";
 
 import { Type } from "@sinclair/typebox";
 import { Projection, Collection } from "./schemas";
@@ -42,7 +42,7 @@ beforeEach(() => {
 
 describe("makeSafeSanityFetch", () => {
   test("sends serialized query to fetch function", async () => {
-    await makeSafeSanityFetch(mockFn, { logger })(schema);
+    await makeQueryClient(mockFn, { logger })(schema);
 
     expect(mockFn).toHaveBeenCalledTimes(1);
 
@@ -53,7 +53,7 @@ describe("makeSafeSanityFetch", () => {
   });
 
   test("sends params to fetch function", async () => {
-    await makeSafeSanityFetch(mockFn, { logger })(schema, { foo: "bar" });
+    await makeQueryClient(mockFn, { logger })(schema, { foo: "bar" });
 
     expect(mockFn).toHaveBeenCalledTimes(1);
 
@@ -68,7 +68,7 @@ describe("makeSafeSanityFetch", () => {
     mockFn.mockResolvedValueOnce([{ _type: "none" }]);
 
     await expect(() =>
-      makeSafeSanityFetch(mockFn, { logger })(schema),
+      makeQueryClient(mockFn, { logger })(schema),
     ).rejects.toThrow("GROQ response did not match expected schema.");
   });
 
@@ -76,9 +76,7 @@ describe("makeSafeSanityFetch", () => {
     // @ts-expect-error
     mockFn.mockResolvedValueOnce([{ _type: "none" }]);
 
-    await makeSafeSanityFetch(mockFn, { logger, validationMode: "WARN" })(
-      schema,
-    );
+    await makeQueryClient(mockFn, { logger, validationMode: "WARN" })(schema);
 
     expect(logger.warn).toHaveBeenCalledWith(
       {

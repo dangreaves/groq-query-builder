@@ -11,7 +11,7 @@ import { Nullable, TNullable } from "./schemas/Nullable";
 
 type SanityParams = Record<string, string | number | null> | undefined;
 
-export function makeSafeSanityFetch(
+export function makeQueryClient(
   fn: (query: string, params?: SanityParams) => Promise<any>,
   {
     validationMode = "ERROR",
