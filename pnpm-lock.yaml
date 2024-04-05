@@ -6,8 +6,8 @@ settings:
 
 devDependencies:
   '@sanity/client':
-    specifier: ^6.15.7
-    version: 6.15.7
+    specifier: ^6.15.11
+    version: 6.15.11
   '@sinclair/typebox':
     specifier: ^0.32.20
     version: 0.32.20
@@ -633,13 +633,13 @@ packages:
     dev: true
     optional: true
 
-  /@sanity/client@6.15.7:
-    resolution: {integrity: sha512-WplOC9jSsqAUcIRm0Agpo38fQRLcYA0SA8yclmsr6lG84Q3uE27ZtyBPvd5+Hx5zzM8mRgdkhZ7yXR/EVGQkhA==}
+  /@sanity/client@6.15.11:
+    resolution: {integrity: sha512-+dAEEKy6LrugjbssVnmef1ZoXOodiEj+0jMzqpygHmw0+uuyeb0jCvAnDdguF1thY/n3H1x+N1edt0CvVrD7Qg==}
     engines: {node: '>=14.18'}
     dependencies:
       '@sanity/eventsource': 5.0.1
       '@vercel/stega': 0.1.0
-      get-it: 8.4.16
+      get-it: 8.4.18
       rxjs: 7.8.1
     transitivePeerDependencies:
       - supports-color
@@ -1148,8 +1148,8 @@ packages:
     resolution: {integrity: sha512-8vXOvuE167CtIc3OyItco7N/dpRtBbYOsPsXCz7X/PMnlGjYjSGuZJgM1Y7mmew7BKf9BqvLX2tnOVy1BBUsxQ==}
     dev: true
 
-  /get-it@8.4.16:
-    resolution: {integrity: sha512-NrdV3P0bI4Zh/R0GXIsY3da5mJUd1lT8hGcfwb3KU9E/ewnJ1e8YAWQycAtj3mxrjesBf8ZBq3TDKqyM8AJkJg==}
+  /get-it@8.4.18:
+    resolution: {integrity: sha512-cOrL+qRSix45onwUNEO/ITrtuh2cvJT+vCFG2qahC/dFBC2z03LxLTwAZ33VPptoytBJN4Ht0AdnYCDBUm/M+Q==}
     engines: {node: '>=14.0.0'}
     dependencies:
       debug: 4.3.4
