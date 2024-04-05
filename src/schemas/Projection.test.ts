@@ -1,14 +1,18 @@
 import { expect, test, describe } from "vitest";
 
-import * as S from "./index";
+import { Type } from "@sinclair/typebox";
+
+import { Raw } from "./Raw";
+import { Projection } from "./Projection";
+import { Collection } from "./Collection";
 
 describe("filtering", () => {
   test("set filter with default slice", () => {
-    const schema = S.Projection(
+    const schema = Projection(
       {
-        _type: S.Literal("movie"),
-        name: S.String(),
-        genre: S.String(),
+        _type: Type.Literal("movie"),
+        name: Type.String(),
+        genre: Type.String(),
       },
       { filter: `genre == "action"` },
     );
@@ -17,10 +21,10 @@ describe("filtering", () => {
   });
 
   test("filter method clones the projection", () => {
-    const schema = S.Projection({
-      _type: S.Literal("movie"),
-      name: S.String(),
-      genre: S.String(),
+    const schema = Projection({
+      _type: Type.Literal("movie"),
+      name: Type.String(),
+      genre: Type.String(),
     });
 
     const filteredSchema = schema.filter(`genre == "action"`);
@@ -33,11 +37,11 @@ describe("filtering", () => {
   });
 
   test("accepts raw filter without wrapping in extra brackets", () => {
-    const schema = S.Projection(
+    const schema = Projection(
       {
-        _type: S.Literal("movie"),
-        name: S.String(),
-        genre: S.String(),
+        _type: Type.Literal("movie"),
+        name: Type.String(),
+        genre: Type.String(),
       },
       { filter: `[_type == "movie" && foo = $bar][0]["content"][1]` },
     );
@@ -48,11 +52,11 @@ describe("filtering", () => {
   });
 
   test("accepts raw filter with a star and drops the star", () => {
-    const schema = S.Projection(
+    const schema = Projection(
       {
-        _type: S.Literal("movie"),
-        name: S.String(),
-        genre: S.String(),
+        _type: Type.Literal("movie"),
+        name: Type.String(),
+        genre: Type.String(),
       },
       { filter: `*[_type == "movie" && foo = $bar][0]["content"][1]` },
     );
@@ -65,11 +69,11 @@ describe("filtering", () => {
 
 describe("slicing", () => {
   test("set slice without a filter", () => {
-    const schema = S.Projection(
+    const schema = Projection(
       {
-        _type: S.Literal("movie"),
-        name: S.String(),
-        genre: S.String(),
+        _type: Type.Literal("movie"),
+        name: Type.String(),
+        genre: Type.String(),
       },
       { slice: 0 },
     );
@@ -78,11 +82,11 @@ describe("slicing", () => {
   });
 
   test("set slice with a filter", () => {
-    const schema = S.Projection(
+    const schema = Projection(
       {
-        _type: S.Literal("movie"),
-        name: S.String(),
-        genre: S.String(),
+        _type: Type.Literal("movie"),
+        name: Type.String(),
+        genre: Type.String(),
       },
       { filter: `genre == "action"`, slice: 3 },
     );
@@ -91,10 +95,10 @@ describe("slicing", () => {
   });
 
   test("slice method clones the projection", () => {
-    const schema = S.Projection({
-      _type: S.Literal("movie"),
-      name: S.String(),
-      genre: S.String(),
+    const schema = Projection({
+      _type: Type.Literal("movie"),
+      name: Type.String(),
+      genre: Type.String(),
     });
 
     const slicedSchema = schema.slice(3);
@@ -107,31 +111,31 @@ describe("slicing", () => {
 
 describe("key formatting", () => {
   test("primitives use naked keys", () => {
-    const schema = S.Projection({
-      _type: S.Literal("user"),
-      name: S.String(),
-      age: S.Number(),
-      isActive: S.Boolean(),
+    const schema = Projection({
+      _type: Type.Literal("user"),
+      name: Type.String(),
+      age: Type.Number(),
+      isActive: Type.Boolean(),
     });
 
     expect(schema.serialize()).toBe("{_type,name,age,isActive}");
   });
 
   test("raw uses quoted key", () => {
-    const schema = S.Projection({
-      name: S.Raw(`"literal string"`, S.String()),
+    const schema = Projection({
+      name: Raw(`"Type.Literal string"`, Type.String()),
     });
 
-    expect(schema.serialize()).toBe(`{"name":"literal string"}`);
+    expect(schema.serialize()).toBe(`{"name":"Type.Literal string"}`);
   });
 
   test("nested projection uses unquoted key", () => {
-    const schema = S.Projection({
-      name: S.String(),
-      address: S.Projection({
-        street: S.String(),
-        city: S.String(),
-        postcode: S.String(),
+    const schema = Projection({
+      name: Type.String(),
+      address: Projection({
+        street: Type.String(),
+        city: Type.String(),
+        postcode: Type.String(),
       }),
     });
 
@@ -139,9 +143,9 @@ describe("key formatting", () => {
   });
 
   test("nested array uses unquoted key", () => {
-    const schema = S.Projection({
-      name: S.String(),
-      invoices: S.Collection(S.Unknown()),
+    const schema = Projection({
+      name: Type.String(),
+      invoices: Collection(Type.Unknown()),
     });
 
     expect(schema.serialize()).toBe(`{name,invoices[]}`);
@@ -150,10 +154,10 @@ describe("key formatting", () => {
 
 describe("reference expansion", () => {
   test("expanded reference adds wrapper", () => {
-    const schema = S.Projection(
+    const schema = Projection(
       {
-        name: S.String(),
-        email: S.String(),
+        name: Type.String(),
+        email: Type.String(),
       },
       { expansionOption: true },
     );
@@ -162,10 +166,10 @@ describe("reference expansion", () => {
   });
 
   test("conditional expanded reference adds wrapper", () => {
-    const schema = S.Projection(
+    const schema = Projection(
       {
-        name: S.String(),
-        email: S.String(),
+        name: Type.String(),
+        email: Type.String(),
       },
       { expansionOption: "reference" },
     );
@@ -176,9 +180,9 @@ describe("reference expansion", () => {
   });
 
   test("expand method clones the projection", () => {
-    const schema = S.Projection({
-      name: S.String(),
-      email: S.String(),
+    const schema = Projection({
+      name: Type.String(),
+      email: Type.String(),
     });
 
     const expandedSchema = schema.expand();

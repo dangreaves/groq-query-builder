@@ -1,14 +1,19 @@
 import { expect, test, describe } from "vitest";
 
-import * as S from "./index";
+import { Type } from "@sinclair/typebox";
+
+import { Collection } from "./Collection";
+import { Projection } from "./Projection";
+import { TypedUnion } from "./TypedUnion";
+import { TypedProjection } from "./TypedProjection";
 
 describe("filtering", () => {
   test("empty brackets when no filter or slice", () => {
-    const schema = S.Collection(
-      S.Projection({
-        _type: S.Literal("movie"),
-        name: S.String(),
-        genre: S.String(),
+    const schema = Collection(
+      Projection({
+        _type: Type.Literal("movie"),
+        name: Type.String(),
+        genre: Type.String(),
       }),
     );
 
@@ -16,11 +21,11 @@ describe("filtering", () => {
   });
 
   test("set filter with empty slice", () => {
-    const schema = S.Collection(
-      S.Projection({
-        _type: S.Literal("movie"),
-        name: S.String(),
-        genre: S.String(),
+    const schema = Collection(
+      Projection({
+        _type: Type.Literal("movie"),
+        name: Type.String(),
+        genre: Type.String(),
       }),
       { filter: `genre == "action"` },
     );
@@ -31,11 +36,11 @@ describe("filtering", () => {
   });
 
   test("filter method clones the schema", () => {
-    const schema = S.Collection(
-      S.Projection({
-        _type: S.Literal("movie"),
-        name: S.String(),
-        genre: S.String(),
+    const schema = Collection(
+      Projection({
+        _type: Type.Literal("movie"),
+        name: Type.String(),
+        genre: Type.String(),
       }),
     );
 
@@ -49,11 +54,11 @@ describe("filtering", () => {
   });
 
   test("accepts raw filter without wrapping in extra brackets", () => {
-    const schema = S.Collection(
-      S.Projection({
-        _type: S.Literal("movie"),
-        name: S.String(),
-        genre: S.String(),
+    const schema = Collection(
+      Projection({
+        _type: Type.Literal("movie"),
+        name: Type.String(),
+        genre: Type.String(),
       }),
       { filter: `[_type == "movie" && foo = $bar][0]["content"]` },
     );
@@ -64,11 +69,11 @@ describe("filtering", () => {
   });
 
   test("accepts raw filter with a star and drops the star", () => {
-    const schema = S.Collection(
-      S.Projection({
-        _type: S.Literal("movie"),
-        name: S.String(),
-        genre: S.String(),
+    const schema = Collection(
+      Projection({
+        _type: Type.Literal("movie"),
+        name: Type.String(),
+        genre: Type.String(),
       }),
       { filter: `*[_type == "movie" && foo = $bar][0]["content"]` },
     );
@@ -81,11 +86,11 @@ describe("filtering", () => {
 
 describe("slicing", () => {
   test("set slice without a filter", () => {
-    const schema = S.Collection(
-      S.Projection({
-        _type: S.Literal("movie"),
-        name: S.String(),
-        genre: S.String(),
+    const schema = Collection(
+      Projection({
+        _type: Type.Literal("movie"),
+        name: Type.String(),
+        genre: Type.String(),
       }),
       { slice: [0, 3] },
     );
@@ -94,11 +99,11 @@ describe("slicing", () => {
   });
 
   test("set slice with a filter", () => {
-    const schema = S.Collection(
-      S.Projection({
-        _type: S.Literal("movie"),
-        name: S.String(),
-        genre: S.String(),
+    const schema = Collection(
+      Projection({
+        _type: Type.Literal("movie"),
+        name: Type.String(),
+        genre: Type.String(),
       }),
       { filter: `genre == "action"`, slice: [0, 3] },
     );
@@ -109,11 +114,11 @@ describe("slicing", () => {
   });
 
   test("slice method clones the schema", () => {
-    const schema = S.Collection(
-      S.Projection({
-        _type: S.Literal("movie"),
-        name: S.String(),
-        genre: S.String(),
+    const schema = Collection(
+      Projection({
+        _type: Type.Literal("movie"),
+        name: Type.String(),
+        genre: Type.String(),
       }),
     );
 
@@ -129,12 +134,12 @@ describe("slicing", () => {
 
 describe("nesting", () => {
   test("serializes correctly when nested", () => {
-    const schema = S.Projection({
-      movies: S.Collection(
-        S.Projection({
-          _type: S.Literal("movie"),
-          name: S.String(),
-          genre: S.String(),
+    const schema = Projection({
+      movies: Collection(
+        Projection({
+          _type: Type.Literal("movie"),
+          name: Type.String(),
+          genre: Type.String(),
         }),
       ),
     });
@@ -145,30 +150,30 @@ describe("nesting", () => {
 
 describe("serialization", () => {
   test("collection of unknown serializes without projection", () => {
-    const schema = S.Collection(S.Unknown());
+    const schema = Collection(Type.Unknown());
     expect(schema.serialize()).toBe(`[]`);
   });
 
   test("collection of string serializes without projection", () => {
-    const schema = S.Collection(S.String());
+    const schema = Collection(Type.String());
     expect(schema.serialize()).toBe(`[]`);
   });
 
   test("collection of typed union serializes correctly", () => {
-    const UnionSchema = S.TypedUnion([
-      S.TypedProjection({
-        _type: S.Literal("movie"),
-        name: S.String(),
-        genre: S.String(),
+    const UnionSchema = TypedUnion([
+      TypedProjection({
+        _type: Type.Literal("movie"),
+        name: Type.String(),
+        genre: Type.String(),
       }),
-      S.TypedProjection({
-        _type: S.Literal("producer"),
-        firstName: S.String(),
-        lastName: S.String(),
+      TypedProjection({
+        _type: Type.Literal("producer"),
+        firstName: Type.String(),
+        lastName: Type.String(),
       }),
     ]);
 
-    const schema = S.Collection(UnionSchema);
+    const schema = Collection(UnionSchema);
 
     expect(schema.serialize()).toBe(
       `[]{_key,...@{...select(_type == "movie" => {_type,name,genre},_type == "producer" => {_type,firstName,lastName},{"_rawType":_type,"_type":"unknown"})}}`,

@@ -1,17 +1,20 @@
 import { expect, test, describe } from "vitest";
 
-import * as S from "./index";
+import { Type } from "@sinclair/typebox";
+
+import { Projection } from "./Projection";
+import { ConditionalUnion } from "./ConditionalUnion";
 
 describe("condition serialization", () => {
   test("conditions without default serializes correctly", () => {
-    const schema = S.ConditionalUnion({
-      [`_type == "person"`]: S.Projection({
-        _type: S.Literal("foo"),
-        name: S.String(),
+    const schema = ConditionalUnion({
+      [`_type == "person"`]: Projection({
+        _type: Type.Literal("foo"),
+        name: Type.String(),
       }),
-      [`_type == "company"`]: S.Projection({
-        _type: S.Literal("company"),
-        companyName: S.String(),
+      [`_type == "company"`]: Projection({
+        _type: Type.Literal("company"),
+        companyName: Type.String(),
       }),
     });
 
@@ -21,17 +24,17 @@ describe("condition serialization", () => {
   });
 
   test("conditions with default serializes correctly", () => {
-    const schema = S.ConditionalUnion({
-      [`_type == "person"`]: S.Projection({
-        _type: S.Literal("foo"),
-        name: S.String(),
+    const schema = ConditionalUnion({
+      [`_type == "person"`]: Projection({
+        _type: Type.Literal("foo"),
+        name: Type.String(),
       }),
-      [`_type == "company"`]: S.Projection({
-        _type: S.Literal("company"),
-        companyName: S.String(),
+      [`_type == "company"`]: Projection({
+        _type: Type.Literal("company"),
+        companyName: Type.String(),
       }),
-      default: S.Projection({
-        _type: S.String(),
+      default: Projection({
+        _type: Type.String(),
       }),
     });
 
@@ -43,15 +46,15 @@ describe("condition serialization", () => {
 
 describe("reference expansion", () => {
   test("expansion option adds wrapper to groq", () => {
-    const schema = S.ConditionalUnion(
+    const schema = ConditionalUnion(
       {
-        [`_type == "person"`]: S.Projection({
-          _type: S.Literal("foo"),
-          name: S.String(),
+        [`_type == "person"`]: Projection({
+          _type: Type.Literal("foo"),
+          name: Type.String(),
         }),
-        [`_type == "company"`]: S.Projection({
-          _type: S.Literal("company"),
-          companyName: S.String(),
+        [`_type == "company"`]: Projection({
+          _type: Type.Literal("company"),
+          companyName: Type.String(),
         }),
       },
       { expansionOption: true },
@@ -63,15 +66,15 @@ describe("reference expansion", () => {
   });
 
   test("expansion option with field name adds wrapper to groq", () => {
-    const schema = S.ConditionalUnion(
+    const schema = ConditionalUnion(
       {
-        [`_type == "person"`]: S.Projection({
-          _type: S.Literal("foo"),
-          name: S.String(),
+        [`_type == "person"`]: Projection({
+          _type: Type.Literal("foo"),
+          name: Type.String(),
         }),
-        [`_type == "company"`]: S.Projection({
-          _type: S.Literal("company"),
-          companyName: S.String(),
+        [`_type == "company"`]: Projection({
+          _type: Type.Literal("company"),
+          companyName: Type.String(),
         }),
       },
       { expansionOption: "reference" },
@@ -83,14 +86,14 @@ describe("reference expansion", () => {
   });
 
   test("expand method clones the projection", () => {
-    const schema = S.ConditionalUnion({
-      [`_type == "person"`]: S.Projection({
-        _type: S.Literal("foo"),
-        name: S.String(),
+    const schema = ConditionalUnion({
+      [`_type == "person"`]: Projection({
+        _type: Type.Literal("foo"),
+        name: Type.String(),
       }),
-      [`_type == "company"`]: S.Projection({
-        _type: S.Literal("company"),
-        companyName: S.String(),
+      [`_type == "company"`]: Projection({
+        _type: Type.Literal("company"),
+        companyName: Type.String(),
       }),
     });
 

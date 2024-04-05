@@ -5,13 +5,14 @@ import type { InferFromSchema } from "./types";
 
 import { makeSafeSanityFetch } from "./client";
 
-import * as S from "./schemas";
+import { Type } from "@sinclair/typebox";
+import { Projection, Collection } from "./schemas";
 
-const schema = S.Collection(
-  S.Projection({
-    title: S.String(),
-    director: S.Projection({
-      name: S.String(),
+const schema = Collection(
+  Projection({
+    title: Type.String(),
+    director: Projection({
+      name: Type.String(),
     }),
   }),
   { filter: `_type == "movie"` },

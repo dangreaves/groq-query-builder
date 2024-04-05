@@ -37,8 +37,8 @@ export type TCollection<T extends TSchema = TSchema> = TArray<
 /**
  * Serialize a collection.
  */
-function serialize(this: TCollection) {
-  const { filter: _filter, slice } = this.__options__ ?? {};
+function serializeCollection(schema: TCollection) {
+  const { filter: _filter, slice } = schema.__options__ ?? {};
 
   // Trim filter star if provided. This is handled by the client.
   const filter =
@@ -73,11 +73,11 @@ function serialize(this: TCollection) {
    *
    * @see https://www.sanity.io/answers/is-there-a-way-to-get-the-key-in-an-array-p1599730869291100
    */
-  const innerGroq = this.__inner_schema__.serialize?.();
+  const innerGroq = schema.__inner_schema__.serialize?.();
   if (innerGroq) {
     if (
-      TypeGuard.IsObject(this.__inner_schema__) ||
-      TypeGuard.IsUnion(this.__inner_schema__)
+      TypeGuard.IsObject(schema.__inner_schema__) ||
+      TypeGuard.IsUnion(schema.__inner_schema__)
     ) {
       groq.push(`{_key,...@${innerGroq}}`);
     } else groq.push(innerGroq);
@@ -89,66 +89,72 @@ function serialize(this: TCollection) {
 /**
  * Filter a collection.
  */
-function filter<T extends TCollection>(this: T, _filter: string): T {
-  const clonedSchema = Object.assign({}, this) as T;
+function filterCollection<T extends TCollection>(
+  _schema: T,
+  _filter: string,
+): T {
+  const { __options__, slice, expand, filter, serialize, ...rest } = _schema;
 
-  clonedSchema.__options__ = {
-    ...(clonedSchema.__options__ ?? {}),
+  const schema = rest as T;
+
+  schema.__options__ = {
+    ...__options__,
     filter: _filter,
   };
 
-  clonedSchema.slice = slice.bind(clonedSchema);
-  clonedSchema.filter = filter.bind(clonedSchema);
-  clonedSchema.serialize = serialize.bind(clonedSchema);
+  schema.slice = (...args) => sliceCollection(schema, ...args);
+  schema.filter = (...args) => filterCollection(schema, ...args);
+  schema.serialize = (...args) => serializeCollection(schema, ...args);
 
-  return clonedSchema;
+  return schema;
 }
 
 /**
  * Slice a collection.
  */
-function slice<T extends TCollection>(this: T, _slice: [number, number]): T {
-  const clonedSchema = Object.assign({}, this) as T;
+function sliceCollection<T extends TCollection>(
+  _schema: T,
+  _slice: [number, number],
+): T {
+  const { __options__, slice, expand, filter, serialize, ...rest } = _schema;
 
-  clonedSchema.__options__ = {
-    ...(clonedSchema.__options__ ?? {}),
+  const schema = rest as T;
+
+  schema.__options__ = {
+    ...__options__,
     slice: _slice,
   };
 
-  clonedSchema.slice = slice.bind(clonedSchema);
-  clonedSchema.filter = filter.bind(clonedSchema);
-  clonedSchema.serialize = serialize.bind(clonedSchema);
+  schema.slice = (...args) => sliceCollection(schema, ...args);
+  schema.filter = (...args) => filterCollection(schema, ...args);
+  schema.serialize = (...args) => serializeCollection(schema, ...args);
 
-  return clonedSchema;
+  return schema;
 }
 
 /**
  * Fetch an array of items with optional filter and slicing.
  */
 export function Collection<T extends TSchema = TSchema>(
-  schema: T,
+  _schema: T,
   options?: TCollectionOptions,
 ): TCollection<T> {
-  const arrayMemberSchema = TypeGuard.IsObject(schema)
-    ? Type.Intersect([schema, Type.Object({ _key: Nullable(Type.String()) })])
-    : schema;
+  const arrayMemberSchema = TypeGuard.IsObject(_schema)
+    ? Type.Intersect([_schema, Type.Object({ _key: Nullable(Type.String()) })])
+    : _schema;
 
   // @ts-ignore TypeScript complains about type depth. Just trust me :(
-  const arraySchema = Type.Array(arrayMemberSchema) as TCollection<T>;
+  const schema = Type.Array(arrayMemberSchema) as TCollection<T>;
 
-  arraySchema.__inner_schema__ = schema;
+  schema.__inner_schema__ = _schema;
 
   if (options) {
-    arraySchema.__options__ = options;
+    schema.__options__ = options;
   }
 
-  arraySchema.serialize = serialize.bind(arraySchema);
+  schema.slice = (...args) => sliceCollection(schema, ...args);
+  schema.filter = (...args) => filterCollection(schema, ...args);
+  schema.serialize = (...args) => serializeCollection(schema, ...args);
 
-  // @ts-expect-error
-  arraySchema.filter = filter.bind(arraySchema);
-
-  // @ts-expect-error
-  arraySchema.slice = slice.bind(arraySchema);
-
-  return arraySchema;
+  return schema;
 }

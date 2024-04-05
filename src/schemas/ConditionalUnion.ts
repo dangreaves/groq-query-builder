@@ -24,28 +24,28 @@ export type TConditionalUnion<
   __conditions__: T;
   __options__?: TConditionalUnionOptions;
   serialize: TSerializer;
-  expand: (this: any, option?: TExpansionOption) => TConditionalUnion<T>;
+  expand: (option?: TExpansionOption) => TConditionalUnion<T>;
 };
 
 /**
  * Serialize a conditional union.
  */
-function serialize(this: TConditionalUnion) {
-  const { expansionOption } = this.__options__ ?? {};
+function serializeConditionalUnion(schema: TConditionalUnion) {
+  const { expansionOption } = schema.__options__ ?? {};
 
   const groq: string[] = [];
 
   // Calculate a set of conditions for select().
-  const selectConditions = Object.entries(this.__conditions__)
+  const selectConditions = Object.entries(schema.__conditions__)
     .filter(([condition]) => "default" !== condition)
-    .map(([condition, schema]) => {
-      const innerGroq = schema.serialize?.() ?? "...";
+    .map(([condition, innerSchema]) => {
+      const innerGroq = innerSchema.serialize?.() ?? "...";
       return `${condition} => ${innerGroq}`;
     });
 
   // Add default condition on the end if provided.
-  if (this.__conditions__["default"]) {
-    const innerGroq = this.__conditions__["default"].serialize?.() ?? "...";
+  if (schema.__conditions__["default"]) {
+    const innerGroq = schema.__conditions__["default"].serialize?.() ?? "...";
     selectConditions.push(innerGroq);
   }
 
@@ -75,22 +75,23 @@ function serialize(this: TConditionalUnion) {
 /**
  * Expand a conditional union.
  */
-function expand<T extends TConditionalUnion>(
-  this: T,
+function expandConditionalUnion<T extends TConditionalUnion>(
+  _schema: T,
   expansionOption?: TExpansionOption,
 ): T {
-  const clonedSchema = Object.assign({}, this) as T;
+  const { __options__, slice, expand, filter, serialize, ...rest } = _schema;
 
-  clonedSchema.__options__ = {
-    ...(clonedSchema.__options__ ?? {}),
+  const schema = rest as T;
+
+  schema.__options__ = {
+    ...__options__,
     expansionOption: expansionOption ?? true,
   };
 
-  clonedSchema.serialize = serialize.bind(clonedSchema);
+  schema.expand = (...args) => expandConditionalUnion(schema, ...args);
+  schema.serialize = (...args) => serializeConditionalUnion(schema, ...args);
 
-  clonedSchema.expand = expand.bind(clonedSchema);
-
-  return clonedSchema;
+  return schema;
 }
 
 /**
@@ -107,10 +108,8 @@ export function ConditionalUnion<
 
   schema.__conditions__ = conditions;
 
-  schema.serialize = serialize.bind(schema);
-
-  // @ts-expect-error
-  schema.expand = expand.bind(schema);
+  schema.expand = (...args) => expandConditionalUnion(schema, ...args);
+  schema.serialize = (...args) => serializeConditionalUnion(schema, ...args);
 
   return schema;
 }

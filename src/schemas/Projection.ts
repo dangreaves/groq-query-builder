@@ -19,14 +19,14 @@ export type TProjection<T extends TProperties = TProperties> = TObject<T> & {
   serialize: TSerializer;
   slice: (slice: number) => TProjection<T>;
   filter: (filter: string) => TProjection<T>;
-  expand: (this: any, option?: TExpansionOption) => TProjection<T>;
+  expand: (option?: TExpansionOption) => TProjection<T>;
 };
 
 /**
  * Serialize a projection.
  */
-function serialize(this: TProjection) {
-  const { slice, filter: _filter, expansionOption } = this.__options__ ?? {};
+function serializeProjection(schema: TProjection) {
+  const { slice, filter: _filter, expansionOption } = schema.__options__ ?? {};
 
   // Trim filter star if provided. This is handled by the client.
   const filter =
@@ -55,7 +55,7 @@ function serialize(this: TProjection) {
   }
 
   // Calculate array of properties and join them into a projection.
-  const projection = Object.entries(this.properties)
+  const projection = Object.entries(schema.properties)
     .map(([key, value]) => {
       // Serialize GROQ for this property.
       const innerGroq = value.serialize?.();
@@ -98,61 +98,70 @@ function serialize(this: TProjection) {
 /**
  * Filter a projection.
  */
-function filter<T extends TProjection>(this: T, _filter: string): T {
-  const clonedSchema = Object.assign({}, this) as T;
+function filterProjection<T extends TProjection>(
+  _schema: T,
+  _filter: string,
+): T {
+  const { __options__, slice, expand, filter, serialize, ...rest } = _schema;
 
-  clonedSchema.__options__ = {
-    ...(clonedSchema.__options__ ?? {}),
+  const schema = rest as T;
+
+  schema.__options__ = {
+    ...__options__,
     filter: _filter,
   };
 
-  clonedSchema.slice = slice.bind(clonedSchema);
-  clonedSchema.filter = filter.bind(clonedSchema);
-  clonedSchema.expand = expand.bind(clonedSchema);
-  clonedSchema.serialize = serialize.bind(clonedSchema);
+  schema.slice = (...args) => sliceProjection(schema, ...args);
+  schema.expand = (...args) => expandProjection(schema, ...args);
+  schema.filter = (...args) => filterProjection(schema, ...args);
+  schema.serialize = (...args) => serializeProjection(schema, ...args);
 
-  return clonedSchema;
+  return schema;
 }
 
 /**
  * Slice a projection.
  */
-function slice<T extends TProjection>(this: T, _slice: number): T {
-  const clonedSchema = Object.assign({}, this) as T;
+function sliceProjection<T extends TProjection>(_schema: T, _slice: number): T {
+  const { __options__, slice, expand, filter, serialize, ...rest } = _schema;
 
-  clonedSchema.__options__ = {
-    ...(clonedSchema.__options__ ?? {}),
+  const schema = rest as T;
+
+  schema.__options__ = {
+    ...__options__,
     slice: _slice,
   };
 
-  clonedSchema.slice = slice.bind(clonedSchema);
-  clonedSchema.filter = filter.bind(clonedSchema);
-  clonedSchema.expand = expand.bind(clonedSchema);
-  clonedSchema.serialize = serialize.bind(clonedSchema);
+  schema.slice = (...args) => sliceProjection(schema, ...args);
+  schema.expand = (...args) => expandProjection(schema, ...args);
+  schema.filter = (...args) => filterProjection(schema, ...args);
+  schema.serialize = (...args) => serializeProjection(schema, ...args);
 
-  return clonedSchema;
+  return schema;
 }
 
 /**
  * Expand a projection.
  */
-function expand<T extends TProjection>(
-  this: T,
+function expandProjection<T extends TProjection>(
+  _schema: T,
   expansionOption?: TExpansionOption,
 ): T {
-  const clonedSchema = Object.assign({}, this) as T;
+  const { __options__, slice, expand, filter, serialize, ...rest } = _schema;
 
-  clonedSchema.__options__ = {
-    ...(clonedSchema.__options__ ?? {}),
+  const schema = rest as T;
+
+  schema.__options__ = {
+    ...__options__,
     expansionOption: expansionOption ?? true,
   };
 
-  clonedSchema.slice = slice.bind(clonedSchema);
-  clonedSchema.filter = filter.bind(clonedSchema);
-  clonedSchema.expand = expand.bind(clonedSchema);
-  clonedSchema.serialize = serialize.bind(clonedSchema);
+  schema.slice = (...args) => sliceProjection(schema, ...args);
+  schema.expand = (...args) => expandProjection(schema, ...args);
+  schema.filter = (...args) => filterProjection(schema, ...args);
+  schema.serialize = (...args) => serializeProjection(schema, ...args);
 
-  return clonedSchema;
+  return schema;
 }
 
 /**
@@ -168,13 +177,10 @@ export function Projection<T extends TProperties = TProperties>(
     schema.__options__ = options;
   }
 
-  // @ts-expect-error
-  schema.slice = slice.bind(schema);
-  // @ts-expect-error
-  schema.filter = filter.bind(schema);
-  // @ts-expect-error
-  schema.expand = expand.bind(schema);
-  schema.serialize = serialize.bind(schema);
+  schema.slice = (...args) => sliceProjection(schema, ...args);
+  schema.expand = (...args) => expandProjection(schema, ...args);
+  schema.filter = (...args) => filterProjection(schema, ...args);
+  schema.serialize = (...args) => serializeProjection(schema, ...args);
 
   return schema;
 }

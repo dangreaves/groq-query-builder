@@ -12,7 +12,7 @@ declare module "@sinclair/typebox" {
 /**
  * Serialize schema to GROQ string.
  */
-export type TSerializer = (this: TSchema) => string;
+export type TSerializer = () => string;
 
 /**
  * Infer type from the given schema.

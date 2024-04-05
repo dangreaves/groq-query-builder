@@ -1,8 +1,10 @@
 import { expect, test } from "vitest";
 
-import * as S from "./index";
+import { Type } from "@sinclair/typebox";
+
+import { Raw } from "./Raw";
 
 test("outputs raw groq", () => {
-  const schema = S.Raw(`"literal string"`, S.String());
+  const schema = Raw(`"literal string"`, Type.String());
   expect(schema.serialize()).toBe(`"literal string"`);
 });

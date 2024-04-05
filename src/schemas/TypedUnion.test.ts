@@ -1,16 +1,19 @@
 import { expect, test } from "vitest";
 
-import * as S from "./index";
+import { Type } from "@sinclair/typebox";
+
+import { TypedUnion } from "./TypedUnion";
+import { TypedProjection } from "./TypedProjection";
 
 test("creates an extended conditional union", () => {
-  const schema = S.TypedUnion([
-    S.TypedProjection({
-      _type: S.Literal("person"),
-      name: S.String(),
+  const schema = TypedUnion([
+    TypedProjection({
+      _type: Type.Literal("person"),
+      name: Type.String(),
     }),
-    S.TypedProjection({
-      _type: S.Literal("company"),
-      companyName: S.String(),
+    TypedProjection({
+      _type: Type.Literal("company"),
+      companyName: Type.String(),
     }),
   ]);
 
