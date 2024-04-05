@@ -11,7 +11,7 @@ import {
 
 import { Nullable, TNullable } from "./Nullable";
 
-import { serialize } from "../serialize";
+import { serializeQuery } from "../serialize";
 
 /**
  * Options available when creating a collection.
@@ -141,7 +141,7 @@ export function serializeCollection(schema: TCollection): string {
    *
    * @see https://www.sanity.io/answers/is-there-a-way-to-get-the-key-in-an-array-p1599730869291100
    */
-  const innerGroq = serialize(innerSchema);
+  const innerGroq = serializeQuery(innerSchema);
   if (innerGroq) {
     if (TypeGuard.IsObject(innerSchema) || TypeGuard.IsUnion(innerSchema)) {
       groq.push(`{_key,...@${innerGroq}}`);

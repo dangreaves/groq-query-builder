@@ -7,7 +7,7 @@ import { Collection } from "./schemas/Collection";
 import { TypedUnion } from "./schemas/TypedUnion";
 import { TypedProjection } from "./schemas/TypedProjection";
 
-import { serialize } from "./serialize";
+import { serializeQuery } from "./serialize";
 
 test("serializes collection of typed union with nullable", () => {
   const UnionSchema = TypedUnion([
@@ -31,7 +31,7 @@ test("serializes collection of typed union with nullable", () => {
 
   const schema = Collection(UnionSchema);
 
-  expect(serialize(schema)).toBe(
+  expect(serializeQuery(schema)).toBe(
     `[]{_key,...@{...select(_type == "movie" => {_type,name,genre,network{_type,networkName}},_type == "producer" => {_type,firstName,lastName},{"_rawType":_type,"_type":"unknown"})}}`,
   );
 });

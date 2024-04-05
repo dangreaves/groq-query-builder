@@ -2,7 +2,7 @@ import { Type, TSchema, TUnion, TypeGuard } from "@sinclair/typebox";
 
 import type { TExpansionOption } from "../types";
 
-import { serialize } from "../serialize";
+import { serializeQuery } from "../serialize";
 
 /**
  * Options available when creating a conditional union.
@@ -80,7 +80,7 @@ export function serializeConditionalUnion(schema: TConditionalUnion): string {
     if (!conditionSchema) return null;
 
     // Serialize the condition schema.
-    const conditionGroq = serialize(conditionSchema) || "...";
+    const conditionGroq = serializeQuery(conditionSchema) || "...";
 
     // Return it in the right format.
     return `${condition} => ${conditionGroq}`;
@@ -93,7 +93,7 @@ export function serializeConditionalUnion(schema: TConditionalUnion): string {
 
   // Default condition found, serialize and append.
   if (defaultConditionSchema) {
-    const conditionGroq = serialize(defaultConditionSchema) || "...";
+    const conditionGroq = serializeQuery(defaultConditionSchema) || "...";
     selectConditions.push(conditionGroq);
   }
 

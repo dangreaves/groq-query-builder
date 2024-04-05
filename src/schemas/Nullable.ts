@@ -1,6 +1,6 @@
 import { Type, TSchema, TUnion, TNull, TypeGuard } from "@sinclair/typebox";
 
-import { serialize } from "../serialize";
+import { serializeQuery } from "../serialize";
 
 /**
  * Symbols for additional attributes on schema.
@@ -46,5 +46,5 @@ export function isNullable(value: unknown): value is TNullable {
  * Serialize a nullable.
  */
 export function serializeNullable(schema: TNullable): string {
-  return serialize(schema[InnerSchemaAttribute]);
+  return serializeQuery(schema[InnerSchemaAttribute]);
 }

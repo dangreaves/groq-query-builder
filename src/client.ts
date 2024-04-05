@@ -3,7 +3,7 @@ import { pino, type Logger } from "pino";
 import type { TSchema } from "@sinclair/typebox";
 import { Value, type ValueError } from "@sinclair/typebox/value";
 
-import { serialize } from "./serialize";
+import { serializeQuery } from "./serialize";
 
 import type { InferFromSchema } from "./types";
 
@@ -26,7 +26,7 @@ export function makeQueryClient(
     const resultSchema = Nullable(schema);
 
     // Serialize the query to a GROQ string.
-    const groq = "*" + serialize(schema);
+    const groq = "*" + serializeQuery(schema);
 
     // No groq stored on schema.
     if (!groq) {

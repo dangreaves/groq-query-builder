@@ -2,7 +2,7 @@ import { Type, TObject, TProperties, TypeGuard } from "@sinclair/typebox";
 
 import type { TExpansionOption } from "../types";
 
-import { serialize } from "../serialize";
+import { serializeQuery } from "../serialize";
 
 /**
  * Options available when creating a projection.
@@ -100,7 +100,7 @@ export function serializeProjection(schema: TProjection): string {
   const projection = Object.entries(schema.properties)
     .map(([key, value]) => {
       // Serialize GROQ for this property.
-      const innerGroq = serialize(value);
+      const innerGroq = serializeQuery(value);
 
       // Property has it's own GROQ to project.
       if (innerGroq) {

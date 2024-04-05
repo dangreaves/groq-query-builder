@@ -13,7 +13,7 @@ import {
   serializeConditionalUnion,
 } from "./schemas/ConditionalUnion";
 
-export function serialize(schema: TSchema): string {
+export function serializeQuery(schema: TSchema): string {
   if (isRaw(schema)) return serializeRaw(schema);
   if (isNullable(schema)) return serializeNullable(schema);
   if (isCollection(schema)) return serializeCollection(schema);
