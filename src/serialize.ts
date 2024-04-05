@@ -13,11 +13,35 @@ import {
   serializeConditionalUnion,
 } from "./schemas/ConditionalUnion";
 
+import { QueryCacheSymbol } from "./symbols";
+
+/**
+ * Serialize the given schema to a GROQ string.
+ */
 export function serializeQuery(schema: TSchema): string {
-  if (isRaw(schema)) return serializeRaw(schema);
-  if (isNullable(schema)) return serializeNullable(schema);
-  if (isCollection(schema)) return serializeCollection(schema);
-  if (isProjection(schema)) return serializeProjection(schema);
-  if (isConditionalUnion(schema)) return serializeConditionalUnion(schema);
-  return "";
+  if (schema[QueryCacheSymbol]) {
+    return schema[QueryCacheSymbol];
+  }
+
+  const query = ((): string => {
+    if (isRaw(schema)) return serializeRaw(schema);
+    if (isNullable(schema)) return serializeNullable(schema);
+    if (isCollection(schema)) return serializeCollection(schema);
+    if (isProjection(schema)) return serializeProjection(schema);
+    if (isConditionalUnion(schema)) return serializeConditionalUnion(schema);
+    return "";
+  })();
+
+  schema[QueryCacheSymbol] = query;
+
+  return query;
+}
+
+/**
+ * Make query cache optionally available on all schemas.
+ */
+declare module "@sinclair/typebox" {
+  interface TSchema {
+    [QueryCacheSymbol]?: string;
+  }
 }
