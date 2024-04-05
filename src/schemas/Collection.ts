@@ -24,14 +24,14 @@ type TCollectionOptions = { filter?: string; slice?: [number, number] };
 const TypeAttribute = Symbol("type");
 const SliceAttribute = Symbol("slice");
 const FilterAttribute = Symbol("filter");
-const InnerSchemaAttribute = Symbol("innerSchema");
+const NeedsIntersectUnwrapAttribute = Symbol("needsIntersectUnwrap");
 
 /**
  * Additional attributes added to underlying schema.
  */
 type AdditionalAttributes = {
   [TypeAttribute]: "Collection";
-  [InnerSchemaAttribute]: TSchema;
+  [NeedsIntersectUnwrapAttribute]: boolean;
   [SliceAttribute]: TCollectionOptions["slice"];
   [FilterAttribute]: TCollectionOptions["filter"];
 };
@@ -54,16 +54,29 @@ export function Collection<T extends TSchema = TSchema>(
   schema: T,
   options?: TCollectionOptions,
 ): TCollection<T> {
-  const arrayMemberSchema = TypeGuard.IsObject(schema)
-    ? Type.Intersect([schema, Type.Object({ _key: Nullable(Type.String()) })])
-    : schema;
+  let arrayMemberSchema: TSchema = schema;
+  let needsIntersectUnwrap: boolean = false;
+
+  // If the inner schema is an object, add the _key attribute with an intersect.
+  if (TypeGuard.IsObject(schema)) {
+    arrayMemberSchema = Type.Intersect([
+      schema,
+      Type.Object({ _key: Nullable(Type.String()) }),
+    ]);
+
+    /**
+     * Signals to the serializer that the array member schema needs to be unwrapped
+     * to find the "real" schema within.
+     */
+    needsIntersectUnwrap = true;
+  }
 
   // @ts-ignore Type instantiation is excessively deep and possibly infinite.
   return Type.Array(arrayMemberSchema, {
     [TypeAttribute]: "Collection",
-    [InnerSchemaAttribute]: schema,
     [SliceAttribute]: options?.slice,
     [FilterAttribute]: options?.filter,
+    [NeedsIntersectUnwrapAttribute]: needsIntersectUnwrap,
   } satisfies AdditionalAttributes) as TCollection<T>;
 }
 
@@ -107,6 +120,18 @@ export function serializeCollection(schema: TCollection): string {
     groq.push("[]");
   }
 
+  // Set inner schema to the array member.
+  let innerSchema: TSchema = schema.items;
+
+  /**
+   * If the schema needs "unwrapping", then the array member will be an intersect
+   * to add the _key attribute. We need to go get the actual schema from within
+   * the intersect to be able to serialize it.
+   */
+  if (schema[NeedsIntersectUnwrapAttribute]) {
+    innerSchema = (schema.items as TIntersect).allOf[0]!;
+  }
+
   /**
    * Prepend projection with outer key attribute if this is an object like schema.
    *
@@ -116,12 +141,9 @@ export function serializeCollection(schema: TCollection): string {
    *
    * @see https://www.sanity.io/answers/is-there-a-way-to-get-the-key-in-an-array-p1599730869291100
    */
-  const innerGroq = serialize(schema[InnerSchemaAttribute]);
+  const innerGroq = serialize(innerSchema);
   if (innerGroq) {
-    if (
-      TypeGuard.IsObject(schema[InnerSchemaAttribute]) ||
-      TypeGuard.IsUnion(schema[InnerSchemaAttribute])
-    ) {
+    if (TypeGuard.IsObject(innerSchema) || TypeGuard.IsUnion(innerSchema)) {
       groq.push(`{_key,...@${innerGroq}}`);
     } else groq.push(innerGroq);
   }
