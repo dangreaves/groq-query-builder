@@ -4,6 +4,8 @@ import type { TExpansionOption } from "../types";
 
 import { serializeQuery } from "../serialize";
 
+import { TypeSymbol, ExpandSymbol, ConditionsSymbol } from "../symbols";
+
 /**
  * Options available when creating a conditional union.
  */
@@ -12,20 +14,13 @@ export type TConditionalUnionOptions = {
 };
 
 /**
- * Symbols for additional attributes on schema.
- */
-const TypeAttribute = Symbol("type");
-const ExpandAttibute = Symbol("expand");
-const ConditionsAttribute = Symbol("conditions");
-
-/**
  * Additional attributes added to underlying schema.
  */
 type AdditionalAttributes = {
   /** Array of conditions in order of the schemas added to the union */
-  [ConditionsAttribute]: string[];
-  [TypeAttribute]: "ConditionalUnion";
-  [ExpandAttibute]: TConditionalUnionOptions["expand"];
+  [ConditionsSymbol]: string[];
+  [TypeSymbol]: "ConditionalUnion";
+  [ExpandSymbol]: TConditionalUnionOptions["expand"];
 };
 
 /**
@@ -48,9 +43,9 @@ export function ConditionalUnion<
   T extends Record<string, TSchema> = Record<string, TSchema>,
 >(conditions: T, options?: TConditionalUnionOptions): TConditionalUnion<T> {
   return Type.Union(Object.values(conditions), {
-    [ExpandAttibute]: options?.expand,
-    [TypeAttribute]: "ConditionalUnion",
-    [ConditionsAttribute]: Object.keys(conditions),
+    [ExpandSymbol]: options?.expand,
+    [TypeSymbol]: "ConditionalUnion",
+    [ConditionsSymbol]: Object.keys(conditions),
   } satisfies AdditionalAttributes) as TConditionalUnion<T>;
 }
 
@@ -60,7 +55,7 @@ export function ConditionalUnion<
 export function isConditionalUnion(value: unknown): value is TConditionalUnion {
   return (
     TypeGuard.IsSchema(value) &&
-    "ConditionalUnion" === (value as TConditionalUnion)[TypeAttribute]
+    "ConditionalUnion" === (value as TConditionalUnion)[TypeSymbol]
   );
 }
 
@@ -71,7 +66,7 @@ export function serializeConditionalUnion(schema: TConditionalUnion): string {
   const groq: string[] = [];
 
   // Calculate a set of conditions for select().
-  const selectConditions = schema[ConditionsAttribute].map((condition, key) => {
+  const selectConditions = schema[ConditionsSymbol].map((condition, key) => {
     // Default condition is always added last.
     if ("default" == condition) return null;
 
@@ -87,7 +82,7 @@ export function serializeConditionalUnion(schema: TConditionalUnion): string {
   }).filter(Boolean) as string[];
 
   // Find the default condition if provided.
-  const defaultConditionIndex = schema[ConditionsAttribute].indexOf("default");
+  const defaultConditionIndex = schema[ConditionsSymbol].indexOf("default");
   const defaultConditionSchema =
     0 <= defaultConditionIndex ? schema.anyOf[defaultConditionIndex] : null;
 
@@ -101,14 +96,14 @@ export function serializeConditionalUnion(schema: TConditionalUnion): string {
   const projection = `...select(${selectConditions.join(",")})`;
 
   // Wrap in a reference expansion.
-  if (true === schema[ExpandAttibute]) {
+  if (true === schema[ExpandSymbol]) {
     groq.push(`{...@->{${projection}}}`);
   }
 
   // Wrap in a conditional reference expansion.
-  else if ("string" === typeof schema[ExpandAttibute]) {
+  else if ("string" === typeof schema[ExpandSymbol]) {
     groq.push(
-      `{_type == "${schema[ExpandAttibute]}" => @->{${projection}},_type != "${schema[ExpandAttibute]}" => @{${projection}}}`,
+      `{_type == "${schema[ExpandSymbol]}" => @->{${projection}},_type != "${schema[ExpandSymbol]}" => @{${projection}}}`,
     );
   }
 
@@ -129,6 +124,6 @@ export function expandConditionalUnion<T extends TConditionalUnion>(
 ): T {
   return {
     ...schema,
-    [ExpandAttibute]: expand ?? true,
+    [ExpandSymbol]: expand ?? true,
   };
 }

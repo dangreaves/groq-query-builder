@@ -2,18 +2,14 @@ import { Type, TSchema, TUnion, TNull, TypeGuard } from "@sinclair/typebox";
 
 import { serializeQuery } from "../serialize";
 
-/**
- * Symbols for additional attributes on schema.
- */
-const TypeAttribute = Symbol("type");
-const InnerSchemaAttribute = Symbol("innerSchema");
+import { TypeSymbol, InnerSchemaSymbol } from "../symbols";
 
 /**
  * Additional attributes added to underlying schema.
  */
 type AdditionalAttributes = {
-  [TypeAttribute]: "Nullable";
-  [InnerSchemaAttribute]: TSchema;
+  [TypeSymbol]: "Nullable";
+  [InnerSchemaSymbol]: TSchema;
 };
 
 /**
@@ -27,8 +23,8 @@ export type TNullable<T extends TSchema = TSchema> = TUnion<[T, TNull]> &
  */
 export function Nullable<T extends TSchema>(schema: T): TNullable<T> {
   return Type.Union([schema, Type.Null()], {
-    [TypeAttribute]: "Nullable",
-    [InnerSchemaAttribute]: schema,
+    [TypeSymbol]: "Nullable",
+    [InnerSchemaSymbol]: schema,
   } satisfies AdditionalAttributes) as TNullable<T>;
 }
 
@@ -37,8 +33,7 @@ export function Nullable<T extends TSchema>(schema: T): TNullable<T> {
  */
 export function isNullable(value: unknown): value is TNullable {
   return (
-    TypeGuard.IsSchema(value) &&
-    "Nullable" === (value as TNullable)[TypeAttribute]
+    TypeGuard.IsSchema(value) && "Nullable" === (value as TNullable)[TypeSymbol]
   );
 }
 
@@ -46,5 +41,5 @@ export function isNullable(value: unknown): value is TNullable {
  * Serialize a nullable.
  */
 export function serializeNullable(schema: TNullable): string {
-  return serializeQuery(schema[InnerSchemaAttribute]);
+  return serializeQuery(schema[InnerSchemaSymbol]);
 }

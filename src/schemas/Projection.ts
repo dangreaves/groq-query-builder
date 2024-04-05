@@ -4,6 +4,13 @@ import type { TExpansionOption } from "../types";
 
 import { serializeQuery } from "../serialize";
 
+import {
+  TypeSymbol,
+  SliceSymbol,
+  FilterSymbol,
+  ExpandSymbol,
+} from "../symbols";
+
 /**
  * Options available when creating a projection.
  */
@@ -14,21 +21,13 @@ export type TProjectionOptions = {
 };
 
 /**
- * Symbols for additional attributes on schema.
- */
-const TypeAttribute = Symbol("type");
-const SliceAttribute = Symbol("slice");
-const FilterAttribute = Symbol("filter");
-const ExpandAttribute = Symbol("expand");
-
-/**
  * Additional attributes added to underlying schema.
  */
 type AdditionalAttributes = {
-  [TypeAttribute]: "Projection";
-  [SliceAttribute]: TProjectionOptions["slice"];
-  [FilterAttribute]: TProjectionOptions["filter"];
-  [ExpandAttribute]: TProjectionOptions["expand"];
+  [TypeSymbol]: "Projection";
+  [SliceSymbol]: TProjectionOptions["slice"];
+  [FilterSymbol]: TProjectionOptions["filter"];
+  [ExpandSymbol]: TProjectionOptions["expand"];
 };
 
 /**
@@ -45,10 +44,10 @@ export function Projection<T extends TProperties = TProperties>(
   options?: TProjectionOptions,
 ): TProjection<T> {
   return Type.Object(properties, {
-    [TypeAttribute]: "Projection",
-    [SliceAttribute]: options?.slice,
-    [FilterAttribute]: options?.filter,
-    [ExpandAttribute]: options?.expand,
+    [TypeSymbol]: "Projection",
+    [SliceSymbol]: options?.slice,
+    [FilterSymbol]: options?.filter,
+    [ExpandSymbol]: options?.expand,
   } satisfies AdditionalAttributes) as TProjection<T>;
 }
 
@@ -58,7 +57,7 @@ export function Projection<T extends TProperties = TProperties>(
 export function isProjection(value: unknown): value is TProjection {
   return (
     TypeGuard.IsSchema(value) &&
-    "Projection" === (value as TProjection)[TypeAttribute]
+    "Projection" === (value as TProjection)[TypeSymbol]
   );
 }
 
@@ -67,9 +66,9 @@ export function isProjection(value: unknown): value is TProjection {
  */
 export function serializeProjection(schema: TProjection): string {
   // Trim filter star if provided. This is handled by the client.
-  const filter = schema[FilterAttribute]?.startsWith("*")
-    ? schema[FilterAttribute].substring(1)
-    : schema[FilterAttribute];
+  const filter = schema[FilterSymbol]?.startsWith("*")
+    ? schema[FilterSymbol].substring(1)
+    : schema[FilterSymbol];
 
   const groq: string[] = [];
 
@@ -91,9 +90,9 @@ export function serializeProjection(schema: TProjection): string {
   // Append slice if provided, or default 0 if filter provided.
   if (
     !alreadySliced &&
-    (filter || "undefined" !== typeof schema[SliceAttribute])
+    (filter || "undefined" !== typeof schema[SliceSymbol])
   ) {
-    groq.push(`[${schema[SliceAttribute] ?? 0}]`);
+    groq.push(`[${schema[SliceSymbol] ?? 0}]`);
   }
 
   // Calculate array of properties and join them into a projection.
@@ -118,14 +117,14 @@ export function serializeProjection(schema: TProjection): string {
     .join(",");
 
   // Wrap in a reference expansion.
-  if (true === schema[ExpandAttribute]) {
+  if (true === schema[ExpandSymbol]) {
     groq.push(`{...@->{${projection}}}`);
   }
 
   // Wrap in a conditional reference expansion.
-  else if ("string" === typeof schema[ExpandAttribute]) {
+  else if ("string" === typeof schema[ExpandSymbol]) {
     groq.push(
-      `{_type == "${schema[ExpandAttribute]}" => @->{${projection}},_type != "${schema[ExpandAttribute]}" => @{${projection}}}`,
+      `{_type == "${schema[ExpandSymbol]}" => @->{${projection}},_type != "${schema[ExpandSymbol]}" => @{${projection}}}`,
     );
   }
 
@@ -146,7 +145,7 @@ export function filterProjection<T extends TProjection>(
 ): T {
   return {
     ...schema,
-    [FilterAttribute]: filter,
+    [FilterSymbol]: filter,
   };
 }
 
@@ -159,7 +158,7 @@ export function sliceProjection<T extends TProjection>(
 ): T {
   return {
     ...schema,
-    [SliceAttribute]: slice,
+    [SliceSymbol]: slice,
   };
 }
 
@@ -172,6 +171,6 @@ export function expandProjection<T extends TProjection>(
 ): T {
   return {
     ...schema,
-    [ExpandAttribute]: expand ?? true,
+    [ExpandSymbol]: expand ?? true,
   };
 }

@@ -1,17 +1,13 @@
 import { TSchema, TypeGuard } from "@sinclair/typebox";
 
-/**
- * Symbols for additional attributes on schema.
- */
-const TypeAttribute = Symbol("type");
-const GroqAttribute = Symbol("groq");
+import { TypeSymbol, GroqSymbol } from "../symbols";
 
 /**
  * Additional attributes added to underlying schema.
  */
 type AdditionalAttributes = {
-  [TypeAttribute]: "Raw";
-  [GroqAttribute]: string;
+  [TypeSymbol]: "Raw";
+  [GroqSymbol]: string;
 };
 
 /**
@@ -25,8 +21,8 @@ export type TRaw<T extends TSchema = TSchema> = T & AdditionalAttributes;
 export function Raw<T extends TSchema = TSchema>(groq: string, schema: T) {
   return {
     ...schema,
-    [TypeAttribute]: "Raw",
-    [GroqAttribute]: groq,
+    [TypeSymbol]: "Raw",
+    [GroqSymbol]: groq,
   } satisfies AdditionalAttributes;
 }
 
@@ -34,12 +30,12 @@ export function Raw<T extends TSchema = TSchema>(groq: string, schema: T) {
  * Return true if the given value is a raw.
  */
 export function isRaw(value: unknown): value is TRaw {
-  return TypeGuard.IsSchema(value) && "Raw" === (value as TRaw)[TypeAttribute];
+  return TypeGuard.IsSchema(value) && "Raw" === (value as TRaw)[TypeSymbol];
 }
 
 /**
  * Serialize a projection.
  */
 export function serializeRaw(schema: TRaw): string {
-  return schema[GroqAttribute];
+  return schema[GroqSymbol];
 }

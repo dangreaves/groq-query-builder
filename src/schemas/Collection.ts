@@ -13,27 +13,26 @@ import { Nullable, TNullable } from "./Nullable";
 
 import { serializeQuery } from "../serialize";
 
+import {
+  TypeSymbol,
+  SliceSymbol,
+  FilterSymbol,
+  NeedsIntersectUnwrapSymbol,
+} from "../symbols";
+
 /**
  * Options available when creating a collection.
  */
 type TCollectionOptions = { filter?: string; slice?: [number, number] };
 
 /**
- * Symbols for additional attributes on schema.
- */
-const TypeAttribute = Symbol("type");
-const SliceAttribute = Symbol("slice");
-const FilterAttribute = Symbol("filter");
-const NeedsIntersectUnwrapAttribute = Symbol("needsIntersectUnwrap");
-
-/**
  * Additional attributes added to underlying schema.
  */
 type AdditionalAttributes = {
-  [TypeAttribute]: "Collection";
-  [NeedsIntersectUnwrapAttribute]: boolean;
-  [SliceAttribute]: TCollectionOptions["slice"];
-  [FilterAttribute]: TCollectionOptions["filter"];
+  [TypeSymbol]: "Collection";
+  [NeedsIntersectUnwrapSymbol]: boolean;
+  [SliceSymbol]: TCollectionOptions["slice"];
+  [FilterSymbol]: TCollectionOptions["filter"];
 };
 
 /**
@@ -73,10 +72,10 @@ export function Collection<T extends TSchema = TSchema>(
 
   // @ts-ignore Type instantiation is excessively deep and possibly infinite.
   return Type.Array(arrayMemberSchema, {
-    [TypeAttribute]: "Collection",
-    [SliceAttribute]: options?.slice,
-    [FilterAttribute]: options?.filter,
-    [NeedsIntersectUnwrapAttribute]: needsIntersectUnwrap,
+    [TypeSymbol]: "Collection",
+    [SliceSymbol]: options?.slice,
+    [FilterSymbol]: options?.filter,
+    [NeedsIntersectUnwrapSymbol]: needsIntersectUnwrap,
   } satisfies AdditionalAttributes) as TCollection<T>;
 }
 
@@ -86,7 +85,7 @@ export function Collection<T extends TSchema = TSchema>(
 export function isCollection(value: unknown): value is TCollection {
   return (
     TypeGuard.IsSchema(value) &&
-    "Collection" === (value as TCollection)[TypeAttribute]
+    "Collection" === (value as TCollection)[TypeSymbol]
   );
 }
 
@@ -95,9 +94,9 @@ export function isCollection(value: unknown): value is TCollection {
  */
 export function serializeCollection(schema: TCollection): string {
   // Trim filter star if provided. This is handled by the client.
-  const filter = schema[FilterAttribute]?.startsWith("*")
-    ? schema[FilterAttribute].substring(1)
-    : schema[FilterAttribute];
+  const filter = schema[FilterSymbol]?.startsWith("*")
+    ? schema[FilterSymbol].substring(1)
+    : schema[FilterSymbol];
 
   // Start the GROQ string.
   const groq: string[] = [];
@@ -111,12 +110,12 @@ export function serializeCollection(schema: TCollection): string {
   }
 
   // Append slice if provided.
-  if (schema[SliceAttribute]) {
-    groq.push(`[${schema[SliceAttribute][0]}...${schema[SliceAttribute][1]}]`);
+  if (schema[SliceSymbol]) {
+    groq.push(`[${schema[SliceSymbol][0]}...${schema[SliceSymbol][1]}]`);
   }
 
   // No filter or slice provided, append empty [] to force array.
-  if (!filter && !schema[SliceAttribute]) {
+  if (!filter && !schema[SliceSymbol]) {
     groq.push("[]");
   }
 
@@ -128,7 +127,7 @@ export function serializeCollection(schema: TCollection): string {
    * to add the _key attribute. We need to go get the actual schema from within
    * the intersect to be able to serialize it.
    */
-  if (schema[NeedsIntersectUnwrapAttribute]) {
+  if (schema[NeedsIntersectUnwrapSymbol]) {
     innerSchema = (schema.items as TIntersect).allOf[0]!;
   }
 
@@ -160,7 +159,7 @@ export function filterCollection<T extends TCollection>(
 ): T {
   return {
     ...schema,
-    [FilterAttribute]: filter,
+    [FilterSymbol]: filter,
   };
 }
 
@@ -173,6 +172,6 @@ export function sliceCollection<T extends TCollection>(
 ): T {
   return {
     ...schema,
-    [SliceAttribute]: slice,
+    [SliceSymbol]: slice,
   };
 }
