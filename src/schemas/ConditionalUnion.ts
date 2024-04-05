@@ -1,12 +1,30 @@
-import { Type, TSchema, TUnion } from "@sinclair/typebox";
+import { Type, TSchema, TUnion, TypeGuard } from "@sinclair/typebox";
 
-import type { TSerializer, TExpansionOption } from "../types";
+import type { TExpansionOption } from "../types";
+
+import { serialize } from "../serialize";
 
 /**
  * Options available when creating a conditional union.
  */
 export type TConditionalUnionOptions = {
-  expansionOption?: TExpansionOption;
+  expand?: TExpansionOption;
+};
+
+/**
+ * Symbols for additional attributes on schema.
+ */
+const TypeAttribute = Symbol("type");
+const ExpandAttibute = Symbol("expand");
+const ConditionsAttribute = Symbol("conditions");
+
+/**
+ * Additional attributes added to underlying schema.
+ */
+type AdditionalAttributes = {
+  [TypeAttribute]: "ConditionalUnion";
+  [ConditionsAttribute]: Record<string, TSchema>;
+  [ExpandAttibute]: TConditionalUnionOptions["expand"];
 };
 
 /**
@@ -20,57 +38,7 @@ type SchemaArrayFromConditions<T extends Record<string, TSchema>> =
  */
 export type TConditionalUnion<
   T extends Record<string, TSchema> = Record<string, TSchema>,
-> = TUnion<SchemaArrayFromConditions<T>> & {
-  __conditions__: T;
-  __options__?: TConditionalUnionOptions;
-  serialize: TSerializer;
-  expand: (option?: TExpansionOption) => TConditionalUnion<T>;
-};
-
-/**
- * Serialize a conditional union.
- */
-function serializeConditionalUnion(schema: TConditionalUnion) {
-  const { expansionOption } = schema.__options__ ?? {};
-
-  const groq: string[] = [];
-
-  // Calculate a set of conditions for select().
-  const selectConditions = Object.entries(schema.__conditions__)
-    .filter(([condition]) => "default" !== condition)
-    .map(([condition, innerSchema]) => {
-      const innerGroq = innerSchema.serialize?.() ?? "...";
-      return `${condition} => ${innerGroq}`;
-    });
-
-  // Add default condition on the end if provided.
-  if (schema.__conditions__["default"]) {
-    const innerGroq = schema.__conditions__["default"].serialize?.() ?? "...";
-    selectConditions.push(innerGroq);
-  }
-
-  // Wrap conditions in a spread select query.
-  const projection = `...select(${selectConditions.join(",")})`;
-
-  // Wrap in a reference expansion.
-  if (true === expansionOption) {
-    groq.push(`{...@->{${projection}}}`);
-  }
-
-  // Wrap in a conditional reference expansion.
-  else if ("string" === typeof expansionOption) {
-    groq.push(
-      `{_type == "${expansionOption}" => @->{${projection}},_type != "${expansionOption}" => @{${projection}}}`,
-    );
-  }
-
-  // Append the unwrapped projection.
-  else {
-    groq.push(`{${projection}}`);
-  }
-
-  return groq.join("");
-}
+> = TUnion<SchemaArrayFromConditions<T>> & AdditionalAttributes;
 
 /**
  * Expand a conditional union.
@@ -100,16 +68,63 @@ function expandConditionalUnion<T extends TConditionalUnion>(
 export function ConditionalUnion<
   T extends Record<string, TSchema> = Record<string, TSchema>,
 >(conditions: T, options?: TConditionalUnionOptions): TConditionalUnion<T> {
-  const schema = Type.Union(Object.values(conditions)) as TConditionalUnion<T>;
+  return Type.Union(Object.values(conditions), {
+    [TypeAttribute]: "ConditionalUnion",
+    [ConditionsAttribute]: conditions,
+    [ExpandAttibute]: options?.expand,
+  } satisfies AdditionalAttributes) as TConditionalUnion<T>;
+}
 
-  if (options) {
-    schema.__options__ = options;
+/**
+ * Return true if the given value is a conditional union.
+ */
+export function isConditionalUnion(value: unknown): value is TConditionalUnion {
+  return (
+    TypeGuard.IsSchema(value) &&
+    "ConditionalUnion" === (value as TConditionalUnion)[TypeAttribute]
+  );
+}
+
+/**
+ * Serialize a conditional union.
+ */
+export function serializeConditionalUnion(schema: TConditionalUnion): string {
+  const groq: string[] = [];
+
+  // Calculate a set of conditions for select().
+  const selectConditions = Object.entries(schema[ConditionsAttribute])
+    .filter(([condition]) => "default" !== condition)
+    .map(([condition, innerSchema]) => {
+      const innerGroq = serialize(innerSchema) || "...";
+      return `${condition} => ${innerGroq}`;
+    });
+
+  // Add default condition on the end if provided.
+  if (schema[ConditionsAttribute]["default"]) {
+    const innerGroq =
+      serialize(schema[ConditionsAttribute]["default"]) || "...";
+    selectConditions.push(innerGroq);
   }
 
-  schema.__conditions__ = conditions;
+  // Wrap conditions in a spread select query.
+  const projection = `...select(${selectConditions.join(",")})`;
 
-  schema.expand = (...args) => expandConditionalUnion(schema, ...args);
-  schema.serialize = (...args) => serializeConditionalUnion(schema, ...args);
+  // Wrap in a reference expansion.
+  if (true === schema[ExpandAttibute]) {
+    groq.push(`{...@->{${projection}}}`);
+  }
 
-  return schema;
+  // Wrap in a conditional reference expansion.
+  else if ("string" === typeof schema[ExpandAttibute]) {
+    groq.push(
+      `{_type == "${schema[ExpandAttibute]}" => @->{${projection}},_type != "${schema[ExpandAttibute]}" => @{${projection}}}`,
+    );
+  }
+
+  // Append the unwrapped projection.
+  else {
+    groq.push(`{${projection}}`);
+  }
+
+  return groq.join("");
 }

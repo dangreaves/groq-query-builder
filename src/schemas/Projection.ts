@@ -1,6 +1,8 @@
-import { Type, TObject, TProperties } from "@sinclair/typebox";
+import { Type, TObject, TProperties, TypeGuard } from "@sinclair/typebox";
 
-import type { TSerializer, TExpansionOption } from "../types";
+import type { TExpansionOption } from "../types";
+
+import { serialize } from "../serialize";
 
 /**
  * Options available when creating a projection.
@@ -8,92 +10,32 @@ import type { TSerializer, TExpansionOption } from "../types";
 export type TProjectionOptions = {
   slice?: number;
   filter?: string;
-  expansionOption?: TExpansionOption;
+  expand?: TExpansionOption;
+};
+
+/**
+ * Symbols for additional attributes on schema.
+ */
+const TypeAttribute = Symbol("type");
+const SliceAttribute = Symbol("slice");
+const FilterAttribute = Symbol("filter");
+const ExpandAttribute = Symbol("expand");
+
+/**
+ * Additional attributes added to underlying schema.
+ */
+type AdditionalAttributes = {
+  [TypeAttribute]: "Projection";
+  [SliceAttribute]: TProjectionOptions["slice"];
+  [FilterAttribute]: TProjectionOptions["filter"];
+  [ExpandAttribute]: TProjectionOptions["expand"];
 };
 
 /**
  * Fetch a single object projection.
  */
-export type TProjection<T extends TProperties = TProperties> = TObject<T> & {
-  __options__?: TProjectionOptions;
-  serialize: TSerializer;
-  slice: (slice: number) => TProjection<T>;
-  filter: (filter: string) => TProjection<T>;
-  expand: (option?: TExpansionOption) => TProjection<T>;
-};
-
-/**
- * Serialize a projection.
- */
-function serializeProjection(schema: TProjection) {
-  const { slice, filter: _filter, expansionOption } = schema.__options__ ?? {};
-
-  // Trim filter star if provided. This is handled by the client.
-  const filter =
-    _filter && _filter.startsWith("*") ? _filter.substring(1) : _filter;
-
-  const groq: string[] = [];
-
-  // Append filter if provided.
-  if (filter) {
-    // Allow raw filters which are already bracketed.
-    if (filter.includes("[")) groq.push(filter);
-    // Otherwise, wrap it in brackets.
-    else groq.push(`[${filter}]`);
-  }
-
-  /**
-   * Determine if a slice is already added via the filter.
-   * The filter option supports "raw" filters where you might pass [foo == "bar"][0] which already
-   * has a slice on the end. Therefore, we don't need to slice it further.
-   */
-  const alreadySliced = filter ? /\[\d+\]$/.test(filter) : false;
-
-  // Append slice if provided, or default 0 if filter provided.
-  if (!alreadySliced && (filter || "undefined" !== typeof slice)) {
-    groq.push(`[${slice ?? 0}]`);
-  }
-
-  // Calculate array of properties and join them into a projection.
-  const projection = Object.entries(schema.properties)
-    .map(([key, value]) => {
-      // Serialize GROQ for this property.
-      const innerGroq = value.serialize?.();
-
-      // Property has it's own GROQ to project.
-      if (innerGroq) {
-        // If object projection, use an unquoted key.
-        if (innerGroq.startsWith("{") || innerGroq.startsWith("["))
-          return `${key}${innerGroq}`;
-
-        // If something else, use a quoted key.
-        return `"${key}":${innerGroq}`;
-      }
-
-      // If no groq, then use a naked key.
-      return key;
-    })
-    .join(",");
-
-  // Wrap in a reference expansion.
-  if (true === expansionOption) {
-    groq.push(`{...@->{${projection}}}`);
-  }
-
-  // Wrap in a conditional reference expansion.
-  else if ("string" === typeof expansionOption) {
-    groq.push(
-      `{_type == "${expansionOption}" => @->{${projection}},_type != "${expansionOption}" => @{${projection}}}`,
-    );
-  }
-
-  // Append the unwrapped projection.
-  else {
-    groq.push(`{${projection}}`);
-  }
-
-  return groq.join("");
-}
+export type TProjection<T extends TProperties = TProperties> = TObject<T> &
+  AdditionalAttributes;
 
 /**
  * Filter a projection.
@@ -171,16 +113,95 @@ export function Projection<T extends TProperties = TProperties>(
   properties: T,
   options?: TProjectionOptions,
 ): TProjection<T> {
-  const schema = Type.Object(properties) as TProjection<T>;
+  return Type.Object(properties, {
+    [TypeAttribute]: "Projection",
+    [SliceAttribute]: options?.slice,
+    [FilterAttribute]: options?.filter,
+    [ExpandAttribute]: options?.expand,
+  } satisfies AdditionalAttributes) as TProjection<T>;
+}
 
-  if (options) {
-    schema.__options__ = options;
+/**
+ * Return true if the given value is a projection.
+ */
+export function isProjection(value: unknown): value is TProjection {
+  return (
+    TypeGuard.IsSchema(value) &&
+    "Projection" === (value as TProjection)[TypeAttribute]
+  );
+}
+
+/**
+ * Serialize a projection.
+ */
+export function serializeProjection(schema: TProjection): string {
+  // Trim filter star if provided. This is handled by the client.
+  const filter = schema[FilterAttribute]?.startsWith("*")
+    ? schema[FilterAttribute].substring(1)
+    : schema[FilterAttribute];
+
+  const groq: string[] = [];
+
+  // Append filter if provided.
+  if (filter) {
+    // Allow raw filters which are already bracketed.
+    if (filter.includes("[")) groq.push(filter);
+    // Otherwise, wrap it in brackets.
+    else groq.push(`[${filter}]`);
   }
 
-  schema.slice = (...args) => sliceProjection(schema, ...args);
-  schema.expand = (...args) => expandProjection(schema, ...args);
-  schema.filter = (...args) => filterProjection(schema, ...args);
-  schema.serialize = (...args) => serializeProjection(schema, ...args);
+  /**
+   * Determine if a slice is already added via the filter.
+   * The filter option supports "raw" filters where you might pass [foo == "bar"][0] which already
+   * has a slice on the end. Therefore, we don't need to slice it further.
+   */
+  const alreadySliced = filter ? /\[\d+\]$/.test(filter) : false;
 
-  return schema;
+  // Append slice if provided, or default 0 if filter provided.
+  if (
+    !alreadySliced &&
+    (filter || "undefined" !== typeof schema[SliceAttribute])
+  ) {
+    groq.push(`[${schema[SliceAttribute] ?? 0}]`);
+  }
+
+  // Calculate array of properties and join them into a projection.
+  const projection = Object.entries(schema.properties)
+    .map(([key, value]) => {
+      // Serialize GROQ for this property.
+      const innerGroq = serialize(value);
+
+      // Property has it's own GROQ to project.
+      if (innerGroq) {
+        // If object projection, use an unquoted key.
+        if (innerGroq.startsWith("{") || innerGroq.startsWith("["))
+          return `${key}${innerGroq}`;
+
+        // If something else, use a quoted key.
+        return `"${key}":${innerGroq}`;
+      }
+
+      // If no groq, then use a naked key.
+      return key;
+    })
+    .join(",");
+
+  // Wrap in a reference expansion.
+  if (true === schema[ExpandAttribute]) {
+    groq.push(`{...@->{${projection}}}`);
+  }
+
+  // Wrap in a conditional reference expansion.
+  else if ("string" === typeof schema[ExpandAttribute]) {
+    groq.push(
+      `{_type == "${schema[ExpandAttribute]}" => @->{${projection}},_type != "${schema[ExpandAttribute]}" => @{${projection}}}`,
+    );
+  }
+
+  // Append the unwrapped projection.
+  else {
+    groq.push(`{${projection}}`);
+  }
+
+  return groq.join("");
 }

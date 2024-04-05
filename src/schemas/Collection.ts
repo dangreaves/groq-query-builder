@@ -9,82 +9,42 @@ import {
   TypeGuard,
 } from "@sinclair/typebox";
 
-import type { TSerializer } from "../types";
-
 import { Nullable, TNullable } from "./Nullable";
+
+import { serialize } from "../serialize";
 
 /**
  * Options available when creating a collection.
  */
-export type TCollectionOptions = { filter?: string; slice?: [number, number] };
+type TCollectionOptions = { filter?: string; slice?: [number, number] };
+
+/**
+ * Symbols for additional attributes on schema.
+ */
+const TypeAttribute = Symbol("type");
+const SliceAttribute = Symbol("slice");
+const FilterAttribute = Symbol("filter");
+const InnerSchemaAttribute = Symbol("innerSchema");
+
+/**
+ * Additional attributes added to underlying schema.
+ */
+type AdditionalAttributes = {
+  [TypeAttribute]: "Collection";
+  [InnerSchemaAttribute]: TSchema;
+  [SliceAttribute]: TCollectionOptions["slice"];
+  [FilterAttribute]: TCollectionOptions["filter"];
+};
 
 /**
  * Fetch an array of items with optional filter and slicing.
  */
-// @ts-ignore Type instantiation is excessively deep and possibly infinite
 export type TCollection<T extends TSchema = TSchema> = TArray<
   T extends TObject | TUnion
     ? TIntersect<[T, TObject<{ _key: TNullable<TString> }>]>
     : T
-> & {
-  __options__?: TCollectionOptions;
-  __inner_schema__: T;
-  serialize: TSerializer;
-  filter: (filter: string) => TCollection<T>;
-  slice: (slice: [number, number]) => TCollection<T>;
-};
-
-/**
- * Serialize a collection.
- */
-function serializeCollection(schema: TCollection) {
-  const { filter: _filter, slice } = schema.__options__ ?? {};
-
-  // Trim filter star if provided. This is handled by the client.
-  const filter =
-    _filter && _filter.startsWith("*") ? _filter.substring(1) : _filter;
-
-  const groq: string[] = [];
-
-  // Append filter if provided.
-  if (filter) {
-    // Allow raw filters which are already bracketed.
-    if (filter.includes("[")) groq.push(filter);
-    // Otherwise, wrap it in brackets.
-    else groq.push(`[${filter}]`);
-  }
-
-  // Append slice if provided.
-  if (slice) {
-    groq.push(`[${slice[0]}...${slice[1]}]`);
-  }
-
-  // No filter or slice provided, append empty [] to force array.
-  if (!filter && !slice) {
-    groq.push("[]");
-  }
-
-  /**
-   * Prepend projection with outer key attribute if this is an object like schema.
-   *
-   * This spread syntax means we never have to change this formatting based on what is inside
-   * the child projection. The _key will always be on the "outside", regardless of if the
-   * inner projection is expanded or not.
-   *
-   * @see https://www.sanity.io/answers/is-there-a-way-to-get-the-key-in-an-array-p1599730869291100
-   */
-  const innerGroq = schema.__inner_schema__.serialize?.();
-  if (innerGroq) {
-    if (
-      TypeGuard.IsObject(schema.__inner_schema__) ||
-      TypeGuard.IsUnion(schema.__inner_schema__)
-    ) {
-      groq.push(`{_key,...@${innerGroq}}`);
-    } else groq.push(innerGroq);
-  }
-
-  return groq.join("");
-}
+> &
+  AdditionalAttributes;
 
 /**
  * Filter a collection.
@@ -136,25 +96,79 @@ function sliceCollection<T extends TCollection>(
  * Fetch an array of items with optional filter and slicing.
  */
 export function Collection<T extends TSchema = TSchema>(
-  _schema: T,
+  schema: T,
   options?: TCollectionOptions,
 ): TCollection<T> {
-  const arrayMemberSchema = TypeGuard.IsObject(_schema)
-    ? Type.Intersect([_schema, Type.Object({ _key: Nullable(Type.String()) })])
-    : _schema;
+  const arrayMemberSchema = TypeGuard.IsObject(schema)
+    ? Type.Intersect([schema, Type.Object({ _key: Nullable(Type.String()) })])
+    : schema;
 
-  // @ts-ignore TypeScript complains about type depth. Just trust me :(
-  const schema = Type.Array(arrayMemberSchema) as TCollection<T>;
+  return Type.Array(arrayMemberSchema, {
+    [TypeAttribute]: "Collection",
+    [InnerSchemaAttribute]: schema,
+    [SliceAttribute]: options?.slice,
+    [FilterAttribute]: options?.filter,
+  } satisfies AdditionalAttributes) as TCollection<T>;
+}
 
-  schema.__inner_schema__ = _schema;
+/**
+ * Return true if the given value is a collection.
+ */
+export function isCollection(value: unknown): value is TCollection {
+  return (
+    TypeGuard.IsSchema(value) &&
+    "Collection" === (value as TCollection)[TypeAttribute]
+  );
+}
 
-  if (options) {
-    schema.__options__ = options;
+/**
+ * Serialize a collection.
+ */
+export function serializeCollection(schema: TCollection): string {
+  // Trim filter star if provided. This is handled by the client.
+  const filter = schema[FilterAttribute]?.startsWith("*")
+    ? schema[FilterAttribute].substring(1)
+    : schema[FilterAttribute];
+
+  // Start the GROQ string.
+  const groq: string[] = [];
+
+  // Append filter if provided.
+  if (filter) {
+    // Allow raw filters which are already bracketed.
+    if (filter.includes("[")) groq.push(filter);
+    // Otherwise, wrap it in brackets.
+    else groq.push(`[${filter}]`);
   }
 
-  schema.slice = (...args) => sliceCollection(schema, ...args);
-  schema.filter = (...args) => filterCollection(schema, ...args);
-  schema.serialize = (...args) => serializeCollection(schema, ...args);
+  // Append slice if provided.
+  if (schema[SliceAttribute]) {
+    groq.push(`[${schema[SliceAttribute][0]}...${schema[SliceAttribute][1]}]`);
+  }
 
-  return schema;
+  // No filter or slice provided, append empty [] to force array.
+  if (!filter && !schema[SliceAttribute]) {
+    groq.push("[]");
+  }
+
+  /**
+   * Prepend projection with outer key attribute if this is an object like schema.
+   *
+   * This spread syntax means we never have to change this formatting based on what is inside
+   * the child projection. The _key will always be on the "outside", regardless of if the
+   * inner projection is expanded or not.
+   *
+   * @see https://www.sanity.io/answers/is-there-a-way-to-get-the-key-in-an-array-p1599730869291100
+   */
+  const innerGroq = serialize(schema[InnerSchemaAttribute]);
+  if (innerGroq) {
+    if (
+      TypeGuard.IsObject(schema[InnerSchemaAttribute]) ||
+      TypeGuard.IsUnion(schema[InnerSchemaAttribute])
+    ) {
+      groq.push(`{_key,...@${innerGroq}}`);
+    } else groq.push(innerGroq);
+  }
+
+  return groq.join("");
 }
