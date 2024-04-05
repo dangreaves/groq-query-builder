@@ -26,14 +26,13 @@
     "prepublishOnly": "pnpm run build",
     "build": "tsc && tsup src/index.ts --dts --format esm,cjs --clean"
   },
-  "dependencies": {
-    "@sinclair/typebox": "^0.32.20"
-  },
   "peerDependencies": {
+    "@sinclair/typebox": "^0.32.20",
     "pino": "^8.19.0"
   },
   "devDependencies": {
     "@sanity/client": "^6.15.7",
+    "@sinclair/typebox": "^0.32.20",
     "@tsconfig/node20": "^20.1.4",
     "@tsconfig/strictest": "^2.0.5",
     "@types/node": "^20.11.30",

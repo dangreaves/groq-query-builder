@@ -4,15 +4,13 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-dependencies:
-  '@sinclair/typebox':
-    specifier: ^0.32.20
-    version: 0.32.20
-
 devDependencies:
   '@sanity/client':
     specifier: ^6.15.7
     version: 6.15.7
+  '@sinclair/typebox':
+    specifier: ^0.32.20
+    version: 0.32.20
   '@tsconfig/node20':
     specifier: ^20.1.4
     version: 20.1.4
@@ -662,7 +660,7 @@ packages:
 
   /@sinclair/typebox@0.32.20:
     resolution: {integrity: sha512-ziK497ILSIYMxD/thl496idIb03IZPlha04itLQu1xAFQbumWZ+Dj4PMMCkDRpAYhvVSdmRlTjGu2B2MA5RplQ==}
-    dev: false
+    dev: true
 
   /@tsconfig/node20@20.1.4:
     resolution: {integrity: sha512-sqgsT69YFeLWf5NtJ4Xq/xAF8p4ZQHlmGW74Nu2tD4+g5fAsposc4ZfaaPixVu4y01BEiDCWLRDCvDM5JOsRxg==}
