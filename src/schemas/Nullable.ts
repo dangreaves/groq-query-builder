@@ -2,14 +2,13 @@ import { Type, TSchema, TUnion, TNull, TypeGuard } from "@sinclair/typebox";
 
 import { serializeQuery } from "../serialize";
 
-import { TypeSymbol, InnerSchemaSymbol } from "../symbols";
+import { TypeSymbol } from "../symbols";
 
 /**
  * Additional attributes added to underlying schema.
  */
 type AdditionalAttributes = {
   [TypeSymbol]: "Nullable";
-  [InnerSchemaSymbol]: TSchema;
 };
 
 /**
@@ -24,7 +23,6 @@ export type TNullable<T extends TSchema = TSchema> = TUnion<[T, TNull]> &
 export function Nullable<T extends TSchema>(schema: T): TNullable<T> {
   return Type.Union([schema, Type.Null()], {
     [TypeSymbol]: "Nullable",
-    [InnerSchemaSymbol]: schema,
   } satisfies AdditionalAttributes) as TNullable<T>;
 }
 
@@ -41,5 +39,6 @@ export function isNullable(value: unknown): value is TNullable {
  * Serialize a nullable.
  */
 export function serializeNullable(schema: TNullable): string {
-  return serializeQuery(schema[InnerSchemaSymbol]);
+  const innerSchema = schema.anyOf[0];
+  return serializeQuery(innerSchema);
 }

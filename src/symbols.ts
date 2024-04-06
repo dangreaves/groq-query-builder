@@ -7,7 +7,6 @@ export const SliceSymbol = Symbol("slice");
 export const FilterSymbol = Symbol("filter");
 export const ExpandSymbol = Symbol("expand");
 export const ConditionsSymbol = Symbol("conditions");
-export const InnerSchemaSymbol = Symbol("innerSchema"); // @todo remove
 export const NeedsIntersectUnwrapSymbol = Symbol("needsIntersectUnwrap");
 
 /**
