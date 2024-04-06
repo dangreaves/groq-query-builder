@@ -11,6 +11,7 @@ import {
 
 import { Nullable, TNullable } from "./Nullable";
 
+import { cloneSchema } from "../clone";
 import { serializeQuery } from "../serialize";
 
 import {
@@ -157,10 +158,9 @@ export function filterCollection<T extends TCollection>(
   schema: T,
   filter: string,
 ): T {
-  return {
-    ...schema,
+  return cloneSchema(schema, {
     [FilterSymbol]: filter,
-  };
+  } satisfies Partial<AdditionalAttributes>);
 }
 
 /**
@@ -170,8 +170,7 @@ export function sliceCollection<T extends TCollection>(
   schema: T,
   slice: [number, number],
 ): T {
-  return {
-    ...schema,
+  return cloneSchema(schema, {
     [SliceSymbol]: slice,
-  };
+  } satisfies Partial<AdditionalAttributes>);
 }

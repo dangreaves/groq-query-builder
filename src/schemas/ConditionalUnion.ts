@@ -2,8 +2,8 @@ import { Type, TSchema, TUnion, TypeGuard } from "@sinclair/typebox";
 
 import type { TExpansionOption } from "../types";
 
+import { cloneSchema } from "../clone";
 import { serializeQuery } from "../serialize";
-
 import { TypeSymbol, ExpandSymbol, ConditionsSymbol } from "../symbols";
 
 /**
@@ -122,8 +122,7 @@ export function expandConditionalUnion<T extends TConditionalUnion>(
   schema: T,
   expand?: TExpansionOption,
 ): T {
-  return {
-    ...schema,
+  return cloneSchema(schema, {
     [ExpandSymbol]: expand ?? true,
-  };
+  } satisfies Partial<AdditionalAttributes>);
 }

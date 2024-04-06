@@ -2,6 +2,7 @@ import { Type, TObject, TProperties, TypeGuard } from "@sinclair/typebox";
 
 import type { TExpansionOption } from "../types";
 
+import { cloneSchema } from "../clone";
 import { serializeQuery } from "../serialize";
 
 import {
@@ -143,10 +144,9 @@ export function filterProjection<T extends TProjection>(
   schema: T,
   filter: string,
 ): T {
-  return {
-    ...schema,
+  return cloneSchema(schema, {
     [FilterSymbol]: filter,
-  };
+  } satisfies Partial<AdditionalAttributes>);
 }
 
 /**
@@ -156,10 +156,9 @@ export function sliceProjection<T extends TProjection>(
   schema: T,
   slice: number,
 ): T {
-  return {
-    ...schema,
+  return cloneSchema(schema, {
     [SliceSymbol]: slice,
-  };
+  } satisfies Partial<AdditionalAttributes>);
 }
 
 /**
@@ -169,8 +168,7 @@ export function expandProjection<T extends TProjection>(
   schema: T,
   expand?: TExpansionOption,
 ): T {
-  return {
-    ...schema,
+  return cloneSchema(schema, {
     [ExpandSymbol]: expand ?? true,
-  };
+  } satisfies Partial<AdditionalAttributes>);
 }
