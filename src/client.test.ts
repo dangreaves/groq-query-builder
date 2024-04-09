@@ -85,4 +85,12 @@ describe("makeSafeSanityFetch", () => {
       `GROQ response failed validation ("WARN" mode).`,
     );
   });
+
+  test("throws error when no groq returned from schema", async () => {
+    await expect(() =>
+      makeQueryClient(mockFn, { logger })(Type.String()),
+    ).rejects.toThrow(
+      "The provided schema does not have a GROQ string. Check that you have used an appropriate schema.",
+    );
+  });
 });

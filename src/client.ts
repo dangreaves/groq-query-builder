@@ -26,14 +26,17 @@ export function makeQueryClient(
     const resultSchema = Nullable(schema);
 
     // Serialize the query to a GROQ string.
-    const groq = "*" + serializeQuery(schema);
+    const serializedQuery = serializeQuery(schema);
 
     // No groq stored on schema.
-    if (!groq) {
+    if (!serializedQuery) {
       throw new Error(
         "The provided schema does not have a GROQ string. Check that you have used an appropriate schema.",
       );
     }
+
+    // Prepend query with * to form a full GROQ query.
+    const groq = "*" + serializedQuery;
 
     // Log the GROQ query.
     logger.debug({ query: groq }, "Sending GROQ query.");
