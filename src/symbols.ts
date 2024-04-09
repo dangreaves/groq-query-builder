@@ -1,18 +1,24 @@
 /**
  * Symbols for additional attributes on schema.
+ *
+ * We don't use actual symbols here, because they could cause issues with bundling where
+ * if this package is included multiple times, you end up with multiple symbols.
+ *
+ * Instead, we use strings which we have made as unique as possible, so as not to conflict
+ * with JSON Schema attributes.
  */
-export const GroqSymbol = Symbol("groq");
-export const TypeSymbol = Symbol("type");
-export const SliceSymbol = Symbol("slice");
-export const FilterSymbol = Symbol("filter");
-export const ExpandSymbol = Symbol("expand");
-export const ConditionsSymbol = Symbol("conditions");
-export const NeedsIntersectUnwrapSymbol = Symbol("needsIntersectUnwrap");
+export const GroqSymbol = "_groq";
+export const TypeSymbol = "_type";
+export const SliceSymbol = "_slice";
+export const FilterSymbol = "_filter";
+export const ExpandSymbol = "_expand";
+export const ConditionsSymbol = "_conditions";
+export const NeedsIntersectUnwrapSymbol = "_needsIntersectUnwrap";
 
 /**
  * Symbol used to cache GROQ string on a schema.
  */
-export const QueryCacheSymbol = Symbol("queryCache");
+export const QueryCacheSymbol = "_queryCache";
 
 /**
  * Make query cache optionally available on all schemas.
