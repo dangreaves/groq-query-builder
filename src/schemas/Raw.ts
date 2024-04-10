@@ -18,7 +18,10 @@ export type TRaw<T extends TSchema = TSchema> = T & AdditionalAttributes;
 /**
  * Output raw GROQ.
  */
-export function Raw<T extends TSchema = TSchema>(groq: string, schema: T) {
+export function Raw<T extends TSchema = TSchema>(
+  groq: string,
+  schema: T,
+): TRaw<T> {
   return {
     ...schema,
     [TypeSymbol]: "Raw",
