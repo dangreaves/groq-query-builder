@@ -13,7 +13,7 @@ type AdditionalAttributes = {
 /**
  * Output raw GROQ.
  */
-export type TRaw<T extends TSchema = TSchema> = T & AdditionalAttributes;
+export type TRaw<T extends TSchema = TSchema> = T;
 
 /**
  * Output raw GROQ.
@@ -40,5 +40,8 @@ export function isRaw(value: unknown): value is TRaw {
  * Serialize a projection.
  */
 export function serializeRaw(schema: TRaw): string {
-  return schema[GroqSymbol];
+  // We know this schema contains the additional attributes.
+  const attributes = schema as unknown as AdditionalAttributes;
+
+  return attributes[GroqSymbol];
 }

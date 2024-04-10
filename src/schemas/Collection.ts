@@ -44,8 +44,7 @@ export type TCollection<T extends TSchema = TSchema> = TArray<
   T extends TObject | TUnion
     ? TIntersect<[T, TObject<{ _key: TNullable<TString> }>]>
     : T
-> &
-  AdditionalAttributes;
+>;
 
 /**
  * Fetch an array of items with optional filter and slicing.
@@ -94,10 +93,13 @@ export function isCollection(value: unknown): value is TCollection {
  * Serialize a collection.
  */
 export function serializeCollection(schema: TCollection): string {
+  // We know this schema contains the additional attributes.
+  const attributes = schema as unknown as AdditionalAttributes;
+
   // Trim filter star if provided. This is handled by the client.
-  const filter = schema[FilterSymbol]?.startsWith("*")
-    ? schema[FilterSymbol].substring(1)
-    : schema[FilterSymbol];
+  const filter = attributes[FilterSymbol]?.startsWith("*")
+    ? attributes[FilterSymbol].substring(1)
+    : attributes[FilterSymbol];
 
   // Start the GROQ string.
   const groq: string[] = [];
@@ -111,12 +113,14 @@ export function serializeCollection(schema: TCollection): string {
   }
 
   // Append slice if provided.
-  if (schema[SliceSymbol]) {
-    groq.push(`[${schema[SliceSymbol][0]}...${schema[SliceSymbol][1]}]`);
+  if (attributes[SliceSymbol]) {
+    groq.push(
+      `[${attributes[SliceSymbol][0]}...${attributes[SliceSymbol][1]}]`,
+    );
   }
 
   // No filter or slice provided, append empty [] to force array.
-  if (!filter && !schema[SliceSymbol]) {
+  if (!filter && !attributes[SliceSymbol]) {
     groq.push("[]");
   }
 
@@ -128,7 +132,7 @@ export function serializeCollection(schema: TCollection): string {
    * to add the _key attribute. We need to go get the actual schema from within
    * the intersect to be able to serialize it.
    */
-  if (schema[NeedsIntersectUnwrapSymbol]) {
+  if (attributes[NeedsIntersectUnwrapSymbol]) {
     innerSchema = (schema.items as TIntersect).allOf[0]!;
   }
 

@@ -34,8 +34,7 @@ type AdditionalAttributes = {
 /**
  * Fetch a single object projection.
  */
-export type TProjection<T extends TProperties = TProperties> = TObject<T> &
-  AdditionalAttributes;
+export type TProjection<T extends TProperties = TProperties> = TObject<T>;
 
 /**
  * Fetch a single object projection.
@@ -66,10 +65,13 @@ export function isProjection(value: unknown): value is TProjection {
  * Serialize a projection.
  */
 export function serializeProjection(schema: TProjection): string {
+  // We know this schema contains the additional attributes.
+  const attributes = schema as unknown as AdditionalAttributes;
+
   // Trim filter star if provided. This is handled by the client.
-  const filter = schema[FilterSymbol]?.startsWith("*")
-    ? schema[FilterSymbol].substring(1)
-    : schema[FilterSymbol];
+  const filter = attributes[FilterSymbol]?.startsWith("*")
+    ? attributes[FilterSymbol].substring(1)
+    : attributes[FilterSymbol];
 
   const groq: string[] = [];
 
@@ -91,9 +93,9 @@ export function serializeProjection(schema: TProjection): string {
   // Append slice if provided, or default 0 if filter provided.
   if (
     !alreadySliced &&
-    (filter || "undefined" !== typeof schema[SliceSymbol])
+    (filter || "undefined" !== typeof attributes[SliceSymbol])
   ) {
-    groq.push(`[${schema[SliceSymbol] ?? 0}]`);
+    groq.push(`[${attributes[SliceSymbol] ?? 0}]`);
   }
 
   // Calculate array of properties and join them into a projection.
@@ -118,14 +120,14 @@ export function serializeProjection(schema: TProjection): string {
     .join(",");
 
   // Wrap in a reference expansion.
-  if (true === schema[ExpandSymbol]) {
+  if (true === attributes[ExpandSymbol]) {
     groq.push(`{...@->{${projection}}}`);
   }
 
   // Wrap in a conditional reference expansion.
-  else if ("string" === typeof schema[ExpandSymbol]) {
+  else if ("string" === typeof attributes[ExpandSymbol]) {
     groq.push(
-      `{_type == "${schema[ExpandSymbol]}" => @->{${projection}},_type != "${schema[ExpandSymbol]}" => @{${projection}}}`,
+      `{_type == "${attributes[ExpandSymbol]}" => @->{${projection}},_type != "${attributes[ExpandSymbol]}" => @{${projection}}}`,
     );
   }
 

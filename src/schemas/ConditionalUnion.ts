@@ -34,7 +34,7 @@ type SchemaArrayFromConditions<T extends Record<string, TSchema>> =
  */
 export type TConditionalUnion<
   T extends Record<string, TSchema> = Record<string, TSchema>,
-> = TUnion<SchemaArrayFromConditions<T>> & AdditionalAttributes;
+> = TUnion<SchemaArrayFromConditions<T>>;
 
 /**
  * Fetch a union of schemas based on conditions.
@@ -63,26 +63,31 @@ export function isConditionalUnion(value: unknown): value is TConditionalUnion {
  * Serialize a conditional union.
  */
 export function serializeConditionalUnion(schema: TConditionalUnion): string {
+  // We know this schema contains the additional attributes.
+  const attributes = schema as unknown as AdditionalAttributes;
+
   const groq: string[] = [];
 
   // Calculate a set of conditions for select().
-  const selectConditions = schema[ConditionsSymbol].map((condition, key) => {
-    // Default condition is always added last.
-    if ("default" == condition) return null;
+  const selectConditions = attributes[ConditionsSymbol].map(
+    (condition, key) => {
+      // Default condition is always added last.
+      if ("default" == condition) return null;
 
-    // Find schema according to key for this condition.
-    const conditionSchema = schema.anyOf[key];
-    if (!conditionSchema) return null;
+      // Find schema according to key for this condition.
+      const conditionSchema = schema.anyOf[key];
+      if (!conditionSchema) return null;
 
-    // Serialize the condition schema.
-    const conditionGroq = serializeQuery(conditionSchema) || "...";
+      // Serialize the condition schema.
+      const conditionGroq = serializeQuery(conditionSchema) || "...";
 
-    // Return it in the right format.
-    return `${condition} => ${conditionGroq}`;
-  }).filter(Boolean) as string[];
+      // Return it in the right format.
+      return `${condition} => ${conditionGroq}`;
+    },
+  ).filter(Boolean) as string[];
 
   // Find the default condition if provided.
-  const defaultConditionIndex = schema[ConditionsSymbol].indexOf("default");
+  const defaultConditionIndex = attributes[ConditionsSymbol].indexOf("default");
   const defaultConditionSchema =
     0 <= defaultConditionIndex ? schema.anyOf[defaultConditionIndex] : null;
 
@@ -96,14 +101,14 @@ export function serializeConditionalUnion(schema: TConditionalUnion): string {
   const projection = `...select(${selectConditions.join(",")})`;
 
   // Wrap in a reference expansion.
-  if (true === schema[ExpandSymbol]) {
+  if (true === attributes[ExpandSymbol]) {
     groq.push(`{...@->{${projection}}}`);
   }
 
   // Wrap in a conditional reference expansion.
-  else if ("string" === typeof schema[ExpandSymbol]) {
+  else if ("string" === typeof attributes[ExpandSymbol]) {
     groq.push(
-      `{_type == "${schema[ExpandSymbol]}" => @->{${projection}},_type != "${schema[ExpandSymbol]}" => @{${projection}}}`,
+      `{_type == "${attributes[ExpandSymbol]}" => @->{${projection}},_type != "${attributes[ExpandSymbol]}" => @{${projection}}}`,
     );
   }
 

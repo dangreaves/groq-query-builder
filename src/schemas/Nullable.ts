@@ -14,8 +14,7 @@ type AdditionalAttributes = {
 /**
  * Allow the given schema to be null.
  */
-export type TNullable<T extends TSchema = TSchema> = TUnion<[T, TNull]> &
-  AdditionalAttributes;
+export type TNullable<T extends TSchema = TSchema> = TUnion<[T, TNull]>;
 
 /**
  * Allow the given schema to be null.
