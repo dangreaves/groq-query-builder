@@ -1,4 +1,10 @@
-import { Type, TObject, TProperties, TypeGuard } from "@sinclair/typebox";
+import {
+  Type,
+  TObject,
+  TypeGuard,
+  TIntersect,
+  TProperties,
+} from "@sinclair/typebox";
 
 import type { TExpansionOption } from "../types";
 
@@ -10,6 +16,7 @@ import {
   SliceSymbol,
   FilterSymbol,
   ExpandSymbol,
+  GreedySymbol,
 } from "../symbols";
 
 /**
@@ -18,6 +25,7 @@ import {
 export type TProjectionOptions = {
   slice?: number;
   filter?: string;
+  greedy?: boolean;
   expand?: TExpansionOption;
 };
 
@@ -27,34 +35,62 @@ export type TProjectionOptions = {
 type AdditionalAttributes = {
   [TypeSymbol]: "Projection";
   [SliceSymbol]: TProjectionOptions["slice"];
+  [GreedySymbol]: TProjectionOptions["greedy"];
   [FilterSymbol]: TProjectionOptions["filter"];
   [ExpandSymbol]: TProjectionOptions["expand"];
 };
 
 /**
- * Fetch a single object projection.
+ * Schema for receiving any attribute with the spread operator.
  */
-export type TProjection<T extends TProperties = TProperties> = TObject<T>;
+const GreedySchema = Type.Record(Type.String(), Type.Unknown());
 
 /**
  * Fetch a single object projection.
  */
-export function Projection<T extends TProperties = TProperties>(
-  properties: T,
-  options?: TProjectionOptions,
-): TProjection<T> {
-  return Type.Object(properties, {
+export type TProjection<
+  T extends TProperties = TProperties,
+  O extends TProjectionOptions = TProjectionOptions,
+> = O["greedy"] extends true
+  ? TIntersect<[TObject<T>, typeof GreedySchema]>
+  : TObject<T>;
+
+/**
+ * Union of potential projection schemas.
+ */
+type TProjectionUnion =
+  | TIntersect<[TObject<TProperties>, typeof GreedySchema]>
+  | TObject<TProperties>;
+
+/**
+ * Fetch a single object projection.
+ */
+export function Projection<
+  T extends TProperties = TProperties,
+  O extends TProjectionOptions = TProjectionOptions,
+>(properties: T, options?: O): TProjection<T, O> {
+  const additionalAttributes = {
     [TypeSymbol]: "Projection",
     [SliceSymbol]: options?.slice,
+    [GreedySymbol]: options?.greedy,
     [FilterSymbol]: options?.filter,
     [ExpandSymbol]: options?.expand,
-  } satisfies AdditionalAttributes) as TProjection<T>;
+  } satisfies AdditionalAttributes;
+
+  if (options?.greedy) {
+    return Type.Intersect(
+      [Type.Object(properties), GreedySchema],
+      additionalAttributes,
+    ) as TProjection<T, O>;
+  }
+
+  return Type.Object(properties, additionalAttributes) as TProjection<T, O>;
 }
 
 /**
  * Return true if the given value is a projection.
  */
-export function isProjection(value: unknown): value is TProjection {
+export function isProjection(value: unknown): value is TProjectionUnion {
   return (
     TypeGuard.IsSchema(value) &&
     "Projection" === (value as TProjection)[TypeSymbol]
@@ -64,9 +100,12 @@ export function isProjection(value: unknown): value is TProjection {
 /**
  * Serialize a projection.
  */
-export function serializeProjection(schema: TProjection): string {
+export function serializeProjection(_schema: TProjectionUnion): string {
   // We know this schema contains the additional attributes.
-  const attributes = schema as unknown as AdditionalAttributes;
+  const attributes = _schema as unknown as AdditionalAttributes;
+
+  // If this is an intersect, then extract the actual schema.
+  const schema = TypeGuard.IsIntersect(_schema) ? _schema.allOf[0] : _schema;
 
   // Trim filter star if provided. This is handled by the client.
   const filter = attributes[FilterSymbol]?.startsWith("*")
@@ -99,8 +138,9 @@ export function serializeProjection(schema: TProjection): string {
   }
 
   // Calculate array of properties and join them into a projection.
-  const projection = Object.entries(schema.properties)
-    .map(([key, value]) => {
+  const projection = [
+    ...(!!attributes[GreedySymbol] ? ["..."] : []), // Prepend spread operator if this projection is greedy.
+    ...Object.entries(schema.properties).map(([key, value]) => {
       // Serialize GROQ for this property.
       const innerGroq = serializeQuery(value);
 
@@ -116,8 +156,8 @@ export function serializeProjection(schema: TProjection): string {
 
       // If no groq, then use a naked key.
       return key;
-    })
-    .join(",");
+    }),
+  ].join(",");
 
   // Wrap in a reference expansion.
   if (true === attributes[ExpandSymbol]) {

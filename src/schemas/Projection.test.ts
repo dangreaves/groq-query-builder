@@ -205,3 +205,17 @@ describe("reference expansion", () => {
     expect(serializeProjection(expandedSchema)).toBe(`{...@->{name,email}}`);
   });
 });
+
+describe("greedy", () => {
+  test("greedy option adds spread to query", () => {
+    const schema = Projection(
+      {
+        name: Type.String(),
+        email: Type.String(),
+      },
+      { greedy: true },
+    );
+
+    expect(serializeProjection(schema)).toBe(`{...,name,email}`);
+  });
+});

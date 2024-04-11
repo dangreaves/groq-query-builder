@@ -10,6 +10,7 @@
 export const GroqSymbol = "_groq";
 export const TypeSymbol = "_type";
 export const SliceSymbol = "_slice";
+export const GreedySymbol = "_greedy";
 export const FilterSymbol = "_filter";
 export const ExpandSymbol = "_expand";
 export const ConditionsSymbol = "_conditions";
