@@ -1,4 +1,4 @@
-import { Type, TSchema, TString, TLiteral } from "@sinclair/typebox";
+import { Type, TSchema, TString, TLiteral, TypeGuard } from "@sinclair/typebox";
 
 import { Raw } from "./Raw";
 import { Projection, TProjection } from "./Projection";
@@ -44,9 +44,14 @@ export function TypedUnion<T extends TTypedProjection[] = TTypedProjection[]>(
 ): TTypedUnion<T> {
   const conditions = schemas.reduce(
     (acc, schema) => {
+      // If this is an intersect, then extract the actual schema.
+      const innerSchema = TypeGuard.IsIntersect(schema)
+        ? schema.allOf[0]
+        : schema;
+
       return {
         ...acc,
-        [`_type == "${schema.properties._type.const}"`]: schema,
+        [`_type == "${innerSchema.properties._type.const}"`]: schema,
       };
     },
     { default: DefaultProjection } as Record<string, TSchema>,
