@@ -16,7 +16,7 @@ type PropertiesWithType = TProperties & { _type: TLiteral };
  */
 export type TTypedProjection<
   T extends PropertiesWithType = PropertiesWithType,
-  O extends TProjectionOptions = TProjectionOptions,
+  O extends TProjectionOptions | undefined = any,
 > = TProjection<T, O>;
 
 /**
@@ -24,7 +24,7 @@ export type TTypedProjection<
  */
 export function TypedProjection<
   T extends PropertiesWithType = PropertiesWithType,
-  O extends TProjectionOptions = TProjectionOptions,
+  O extends TProjectionOptions | undefined = undefined,
 >(properties: T, options?: O): TTypedProjection<T, O> {
   return Projection(properties, options);
 }

@@ -50,24 +50,19 @@ const GreedySchema = Type.Record(Type.String(), Type.Unknown());
  */
 export type TProjection<
   T extends TProperties = TProperties,
-  O extends TProjectionOptions = TProjectionOptions,
-> = O["greedy"] extends true
-  ? TIntersect<[TObject<T>, typeof GreedySchema]>
+  O extends TProjectionOptions | undefined = any,
+> = O extends TProjectionOptions
+  ? O["greedy"] extends true
+    ? TIntersect<[TObject<T>, typeof GreedySchema]>
+    : TObject<T>
   : TObject<T>;
-
-/**
- * Union of potential projection schemas.
- */
-type TProjectionUnion =
-  | TIntersect<[TObject<TProperties>, typeof GreedySchema]>
-  | TObject<TProperties>;
 
 /**
  * Fetch a single object projection.
  */
 export function Projection<
   T extends TProperties = TProperties,
-  O extends TProjectionOptions = TProjectionOptions,
+  O extends TProjectionOptions | undefined = undefined,
 >(properties: T, options?: O): TProjection<T, O> {
   const additionalAttributes = {
     [TypeSymbol]: "Projection",
@@ -90,7 +85,7 @@ export function Projection<
 /**
  * Return true if the given value is a projection.
  */
-export function isProjection(value: unknown): value is TProjectionUnion {
+export function isProjection(value: unknown): value is TProjection {
   return (
     TypeGuard.IsSchema(value) &&
     "Projection" === (value as TProjection)[TypeSymbol]
@@ -100,7 +95,7 @@ export function isProjection(value: unknown): value is TProjectionUnion {
 /**
  * Serialize a projection.
  */
-export function serializeProjection(_schema: TProjectionUnion): string {
+export function serializeProjection(_schema: TProjection): string {
   // We know this schema contains the additional attributes.
   const attributes = _schema as unknown as AdditionalAttributes;
 
