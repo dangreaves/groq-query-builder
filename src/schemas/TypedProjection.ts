@@ -16,13 +16,15 @@ type PropertiesWithType = TProperties & { _type: TLiteral };
  */
 export type TTypedProjection<
   T extends PropertiesWithType = PropertiesWithType,
-> = TProjection<T>;
+  O extends TProjectionOptions = TProjectionOptions,
+> = TProjection<T, O>;
 
 /**
  * Fetch a projection with required _type attribute.
  */
 export function TypedProjection<
   T extends PropertiesWithType = PropertiesWithType,
->(properties: T, options?: TProjectionOptions): TTypedProjection<T> {
+  O extends TProjectionOptions = TProjectionOptions,
+>(properties: T, options?: O): TTypedProjection<T, O> {
   return Projection(properties, options);
 }
