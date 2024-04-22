@@ -6,8 +6,8 @@ settings:
 
 devDependencies:
   '@sanity/client':
-    specifier: ^6.15.14
-    version: 6.15.14
+    specifier: ^6.15.19
+    version: 6.15.19
   '@sinclair/typebox':
     specifier: ^0.32.20
     version: 0.32.20
@@ -633,16 +633,15 @@ packages:
     dev: true
     optional: true
 
-  /@sanity/client@6.15.14:
-    resolution: {integrity: sha512-GusjgP57Xm/CVqHBAVjv4jLSFD9Pu6KliNpHAQVRRQRKVZ5grl0Rd85UDowXziLFGD3OjHH3ssdQWXR3jzKGkA==}
+  /@sanity/client@6.15.19:
+    resolution: {integrity: sha512-AbRMPuqyENNNmhWbWt4M1rWOaPuEnxez8nb+NrjYRu2ULj6+a4zMRobmteEGeciTsu/WY5ky8bC1qDSwq957pA==}
     engines: {node: '>=14.18'}
     dependencies:
       '@sanity/eventsource': 5.0.1
-      '@vercel/stega': 0.1.0
-      get-it: 8.4.23
+      get-it: 8.4.27
       rxjs: 7.8.1
     transitivePeerDependencies:
-      - supports-color
+      - debug
     dev: true
 
   /@sanity/eventsource@5.0.1:
@@ -686,10 +685,6 @@ packages:
     resolution: {integrity: sha512-wq0cICSkRLVaf3UGLMGItu/PtdY7oaXaI/RVU+xliKVOtRna3PRY57ZDfztpDL0n11vfymMUnXv8QwYCO7L1wg==}
     dependencies:
       undici-types: 5.26.5
-    dev: true
-
-  /@vercel/stega@0.1.0:
-    resolution: {integrity: sha512-5b0PkOJsFBX5alChuIO3qpkt5vIZBevzLPhUQ1UP8UzVjL3F1VllnZxp/thfD8R5ol7D7WHkgZHIjdUBX4tDpQ==}
     dev: true
 
   /@vitest/expect@1.5.0:
@@ -1109,7 +1104,7 @@ packages:
       to-regex-range: 5.0.1
     dev: true
 
-  /follow-redirects@1.15.6(debug@4.3.4):
+  /follow-redirects@1.15.6:
     resolution: {integrity: sha512-wWN62YITEaOpSK584EZXJafH1AGpO8RVgElfkuXbTOrPX4fIfOyEpW/CsiNd8JdYrAoOvafRTOEnvsO++qCqFA==}
     engines: {node: '>=4.0'}
     peerDependencies:
@@ -1117,8 +1112,6 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
-    dependencies:
-      debug: 4.3.4
     dev: true
 
   /foreground-child@3.1.1:
@@ -1148,21 +1141,19 @@ packages:
     resolution: {integrity: sha512-8vXOvuE167CtIc3OyItco7N/dpRtBbYOsPsXCz7X/PMnlGjYjSGuZJgM1Y7mmew7BKf9BqvLX2tnOVy1BBUsxQ==}
     dev: true
 
-  /get-it@8.4.23:
-    resolution: {integrity: sha512-dmjxAuUmGC09pYc/tpaueuxg8SP7Z0HYeBspaWsnmHBaBNxWdPATrD+q9LIbQ04IYLmbqp7ORaKODoprOz+uBA==}
+  /get-it@8.4.27:
+    resolution: {integrity: sha512-3ferjw17+sUrDws9Q5JOvC2ecaEjXQlBTarRNe7JLtKhzsnc7AILYzgn0TD0NZNuaeb7rEcGLX7tGHsDISJyAg==}
     engines: {node: '>=14.0.0'}
     dependencies:
-      debug: 4.3.4
       decompress-response: 7.0.0
-      follow-redirects: 1.15.6(debug@4.3.4)
+      follow-redirects: 1.15.6
       into-stream: 6.0.0
       is-retry-allowed: 2.2.0
       is-stream: 2.0.1
-      parse-headers: 2.0.5
       progress-stream: 2.0.0
       tunnel-agent: 0.6.0
     transitivePeerDependencies:
-      - supports-color
+      - debug
     dev: true
 
   /get-stream@6.0.1:
@@ -1479,10 +1470,6 @@ packages:
     engines: {node: '>=18'}
     dependencies:
       yocto-queue: 1.0.0
-    dev: true
-
-  /parse-headers@2.0.5:
-    resolution: {integrity: sha512-ft3iAoLOB/MlwbNXgzy43SWGP6sQki2jQvAyBg/zDFAgr9bfNWZIUj42Kw2eJIl8kEi4PbgE6U1Zau/HwI75HA==}
     dev: true
 
   /path-key@3.1.1:
