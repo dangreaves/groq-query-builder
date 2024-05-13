@@ -6,8 +6,8 @@ settings:
 
 devDependencies:
   '@sanity/client':
-    specifier: ^6.17.2
-    version: 6.17.2
+    specifier: ^6.18.0
+    version: 6.18.0
   '@sinclair/typebox':
     specifier: ^0.32.29
     version: 0.32.29
@@ -633,12 +633,12 @@ packages:
     dev: true
     optional: true
 
-  /@sanity/client@6.17.2:
-    resolution: {integrity: sha512-5bGqwlCWqL07KEtQvl/WbL577HBbzJC6/YVfzN2p8nifRH7lMYufJJhGH0whrhec9AObna0JkwW9uTjd5puidA==}
+  /@sanity/client@6.18.0:
+    resolution: {integrity: sha512-K6G5ZJm+ZW4LaH8JB8GlER8k97C4cPClcCDj/oEINEL59EZcMGjC2SLlx9zInocoxpcUkpvff2+1VsTkhUvMYA==}
     engines: {node: '>=14.18'}
     dependencies:
       '@sanity/eventsource': 5.0.2
-      get-it: 8.4.28
+      get-it: 8.4.29
       rxjs: 7.8.1
     transitivePeerDependencies:
       - debug
@@ -1141,8 +1141,8 @@ packages:
     resolution: {integrity: sha512-8vXOvuE167CtIc3OyItco7N/dpRtBbYOsPsXCz7X/PMnlGjYjSGuZJgM1Y7mmew7BKf9BqvLX2tnOVy1BBUsxQ==}
     dev: true
 
-  /get-it@8.4.28:
-    resolution: {integrity: sha512-zLUAazo/UMrm7tvhhHD6w/eKVuilXPW8zR1klDmGKZPP6LhWZ0iUWjel8EVi3OIeSMKS53XwDl5paiGsqCwhxQ==}
+  /get-it@8.4.29:
+    resolution: {integrity: sha512-mUSJjmFTdCoVwvf4uj/pCOlaMt8x6OK1nirKcyI5KH7IMyt2h5UGsZGu9NjtRVUFPN0QumWlPqVmG1oFK4mkZQ==}
     engines: {node: '>=14.0.0'}
     dependencies:
       decompress-response: 7.0.0
