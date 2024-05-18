@@ -31,7 +31,7 @@
     "pino": "^9.1.0"
   },
   "devDependencies": {
-    "@sanity/client": "^6.17.2",
+    "@sanity/client": "^6.18.2",
     "@sinclair/typebox": "^0.32.29",
     "@tsconfig/node20": "^20.1.4",
     "@tsconfig/strictest": "^2.0.5",
