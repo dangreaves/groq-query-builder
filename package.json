@@ -27,12 +27,12 @@
     "build": "tsc && tsup src/index.ts --dts --format esm,cjs --clean"
   },
   "peerDependencies": {
-    "@sinclair/typebox": "^0.32.29",
+    "@sinclair/typebox": "^0.32.30",
     "pino": "^9.1.0"
   },
   "devDependencies": {
     "@sanity/client": "^6.18.2",
-    "@sinclair/typebox": "^0.32.29",
+    "@sinclair/typebox": "^0.32.30",
     "@tsconfig/node20": "^20.1.4",
     "@tsconfig/strictest": "^2.0.5",
     "@types/node": "^20.12.12",
