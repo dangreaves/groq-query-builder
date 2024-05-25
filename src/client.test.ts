@@ -86,6 +86,16 @@ describe("makeSafeSanityFetch", () => {
     );
   });
 
+  test("does not log when validation mode is SILENT", async () => {
+    // @ts-expect-error
+    mockFn.mockResolvedValueOnce([{ _type: "none" }]);
+
+    await makeQueryClient(mockFn, { logger, validationMode: "SILENT" })(schema);
+
+    expect(logger.warn).not.toHaveBeenCalled();
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+
   test("throws error when no groq returned from schema", async () => {
     await expect(() =>
       makeQueryClient(mockFn, { logger })(Type.String()),

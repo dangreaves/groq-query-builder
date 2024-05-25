@@ -16,7 +16,7 @@ export function makeQueryClient(
   {
     validationMode = "ERROR",
     logger = pino({ level: "info" }),
-  }: { logger?: Logger; validationMode?: "ERROR" | "WARN" } = {},
+  }: { logger?: Logger; validationMode?: "ERROR" | "WARN" | "SILENT" } = {},
 ) {
   return async function fetchSanity<T extends TSchema>(
     schema: T,
