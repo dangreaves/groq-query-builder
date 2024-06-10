@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@sanity/client':
-        specifier: ^6.19.1
-        version: 6.19.1
+        specifier: ^6.20.0
+        version: 6.20.0
       '@sinclair/typebox':
         specifier: ^0.32.31
         version: 0.32.31
@@ -424,8 +424,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@sanity/client@6.19.1':
-    resolution: {integrity: sha512-D3ZDc1xj0a+lAnsAd5oXc4+JStJ92Z1GlkgL2+6PoKcqiK6xAQUXwcrUwgniWzzSmafXxBJYokpg/i1VuI/mCA==}
+  '@sanity/client@6.20.0':
+    resolution: {integrity: sha512-p6ENOFBR1QQirKj6zVYPDeZNVHMVV+3UVo+RptZDQPuyYyfAOA/TwJzX3cE19O2G4CgWnLfkmOOg6RcFjzFMWQ==}
     engines: {node: '>=14.18'}
 
   '@sanity/eventsource@5.0.2':
@@ -686,8 +686,8 @@ packages:
   get-func-name@2.0.2:
     resolution: {integrity: sha512-8vXOvuE167CtIc3OyItco7N/dpRtBbYOsPsXCz7X/PMnlGjYjSGuZJgM1Y7mmew7BKf9BqvLX2tnOVy1BBUsxQ==}
 
-  get-it@8.5.0:
-    resolution: {integrity: sha512-OHrFT+2Nxk7PbzSnRHUMFjF83zqCvfc/t5l+ysSEK1MhvN26BtRt/AcZeA7uDs8TGtVPDKdGqLeqENKsM6GTDg==}
+  get-it@8.6.0:
+    resolution: {integrity: sha512-ZFNZc3eKkYRHI5a7p3SAc3s0eBJgLL+qqpF7wpoFbTdzbHKC/XHu+6ot9RZTe6aoYGmZqf3Mdl62XdgiWJ7/ZQ==}
     engines: {node: '>=14.0.0'}
 
   get-stream@6.0.1:
@@ -1512,10 +1512,10 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.13.0':
     optional: true
 
-  '@sanity/client@6.19.1':
+  '@sanity/client@6.20.0':
     dependencies:
       '@sanity/eventsource': 5.0.2
-      get-it: 8.5.0
+      get-it: 8.6.0
       rxjs: 7.8.1
     transitivePeerDependencies:
       - debug
@@ -1817,7 +1817,7 @@ snapshots:
 
   get-func-name@2.0.2: {}
 
-  get-it@8.5.0:
+  get-it@8.6.0:
     dependencies:
       decompress-response: 7.0.0
       follow-redirects: 1.15.6
