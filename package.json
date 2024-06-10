@@ -35,7 +35,7 @@
     "@sinclair/typebox": "^0.32.31",
     "@tsconfig/node20": "^20.1.4",
     "@tsconfig/strictest": "^2.0.5",
-    "@types/node": "^20.14.0",
+    "@types/node": "^20.14.2",
     "pino": "^9.1.0",
     "prettier": "^3.3.1",
     "tsup": "^8.1.0",
