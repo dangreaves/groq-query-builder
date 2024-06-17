@@ -12,8 +12,8 @@ importers:
         specifier: ^6.19.1
         version: 6.19.1
       '@sinclair/typebox':
-        specifier: ^0.32.31
-        version: 0.32.31
+        specifier: ^0.32.33
+        version: 0.32.33
       '@tsconfig/node20':
         specifier: ^20.1.4
         version: 20.1.4
@@ -434,8 +434,8 @@ packages:
   '@sinclair/typebox@0.27.8':
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
 
-  '@sinclair/typebox@0.32.31':
-    resolution: {integrity: sha512-rYB0tgGHawpom3ZwwsGidvI0NI+W/rRHu1dyyO1KlIoH8iMdg3esSnYQxQtyJ8eflhqxmzEV7Nu8zT4JY7CHKw==}
+  '@sinclair/typebox@0.32.33':
+    resolution: {integrity: sha512-jM50BfkKA0fwfj0uRRO6asfNfbU0oZipJIb/bL2+BUH/THjuEf2BMiqBOvKfBji5Z9t59NboZQGNfKZbdV50Iw==}
 
   '@tsconfig/node20@20.1.4':
     resolution: {integrity: sha512-sqgsT69YFeLWf5NtJ4Xq/xAF8p4ZQHlmGW74Nu2tD4+g5fAsposc4ZfaaPixVu4y01BEiDCWLRDCvDM5JOsRxg==}
@@ -1529,7 +1529,7 @@ snapshots:
 
   '@sinclair/typebox@0.27.8': {}
 
-  '@sinclair/typebox@0.32.31': {}
+  '@sinclair/typebox@0.32.33': {}
 
   '@tsconfig/node20@20.1.4': {}
 
