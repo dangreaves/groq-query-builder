@@ -1,13 +1,21 @@
-<h1 align="center">groq-query-builder</h1>
+> [!WARNING]
+>
+> **I am no longer maintaining this package.**
+>
+> - The official [Sanity TypeGen](https://www.sanity.io/docs/sanity-typegen) package continues to improve, and is the likely future for using TypeScript with Sanity.
+> - The GROQ query language is complex, such that serializing it with a "builder" is challenging. I don't think you can truly utilise GROQ without writing your queries as a giant string.
+> - The official [groq](https://github.com/sanity-io/sanity/tree/next/packages/groq) package has a `defineQuery` helper, which I hope will get smarter in the future, much like GraphQL tooling has evolved to work with strings.
+> - Though TypeBox was a big improvement over Zod, type inference is too slow in TypeScript right now, such that inferring schema definitions on the fly becomes prohibitively slow as complexity increases.
+> - Sanity TypeGen generates static types at build time from the schema files. This has the limitation that the types are not guaranteed to match the GROQ response, and there is no runtime validation. However, because it emits simple types, it's much faster to analyse. I believe that the improved developer experience is worth the small risk that content lake data could drift.
+> - Potentially, tools could be developed that regularly "scan" the content lake for data which no longer matches the expected schemas, eliminating this risk, or Sanity develops some sort of content lake schema, which is not bound to the studio.
 
-<p align="center">
-  <a href="https://github.com/dangreaves/groq-query-builder/actions/workflows/test.yml"><img src="https://img.shields.io/github/actions/workflow/status/dangreaves/groq-query-builder/test.yml?label=tests&color=161b22" /></a>
-  <a href="https://www.npmjs.com/package/@dangreaves/groq-query-builder"><img src="https://img.shields.io/npm/v/%40dangreaves%2Fgroq-query-builder?color=161b22" /></a>
-  <a href="https://www.npmjs.com/package/@dangreaves/groq-query-builder"><img src="https://img.shields.io/npm/dw/%40dangreaves%2Fgroq-query-builder?color=161b22" /></a>
-  <a href="./LICENCE"><img src="https://img.shields.io/github/license/dangreaves/groq-query-builder?color=161b22" /></a>
-</p>
+# groq-query-builder
 
-<p align="center">Build fully typed <a href="https://www.sanity.io/docs/groq">GROQ</a> queries with runtime validation using <a href="https://github.com/sinclairzx81/typebox">TypeBox</a>.</p>
+[![NPM Version](https://img.shields.io/npm/v/%40dangreaves%2Fgroq-query-builder)](https://npmjs.com/@dangreaves/groq-query-builder)
+![NPM License](https://img.shields.io/npm/l/%40dangreaves%2Fgroq-query-builder)
+![NPM Downloads](https://img.shields.io/npm/dm/%40dangreaves%2Fgroq-query-builder)
+
+Build fully typed [GROQ](https://www.sanity.io/docs/groq) queries with runtime validation using [TypeBox](https://github.com/sinclairzx81/typebox).
 
 ## Example
 
